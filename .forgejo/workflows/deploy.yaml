@@ -20,7 +20,7 @@ jobs:
 
       - name: Inject commit has
         run: |
-          echo "VITE_GIT_COMMIT=$(git rev-parse --short HEAD)" > .env
+          echo "VITE_GIT_COMMIT=${GITHUB_SHA::7}" > .env
 
       - name: Build project
         run: bun run build
