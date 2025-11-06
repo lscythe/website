@@ -1,0 +1,9 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "lscythe-website",
+  "compatibility_date": "2025-11-06",
+  "assets": {
+    "not_found_handling": "404-page",
+    "directory": "./dist",
+  },
+}

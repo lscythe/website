@@ -1,5 +1,7 @@
 ---
 const currentYear = new Date().getFullYear();
+const commitHash = import.meta.env.VITE_GIT_COMMIT ?? "dev";
+const gitUrl = `https://git.lscythe.dev/lscythe/website/commit/${commitHash}`;
 ---
 
 <footer>
@@ -12,7 +14,8 @@ const currentYear = new Date().getFullYear();
         <span><a href="/LICENSE">license</a></span>
     </div>
     <div class="bottom">
-        <span>built with &lt;3 on commit <a href="">asdasd</a></span>
+        <span>built with &lt;3 on commit <a href={gitUrl}>{commitHash}</a></span
+        >
     </div>
 </footer>
 
