@@ -64,9 +64,54 @@ const avatar = `
 `;
 ---
 
-<Layout>
+<Layout title="about">
     <div class="container">
         <pre class="avatar">{avatar}</pre>
+        <div class="resume">
+            <a href="/resume.pdf">View Resume</a>
+        </div>
+        <div class="content">
+            <h1>Howdy!</h1>
+            <p>
+                I'm Rendra. I'm <strong>Software Engineer</strong> dedicated to crafting
+                things for mobile through coding.
+            </p>
+            <p>
+                Welcome to my spot on the web for writing, projects, tutorials,
+                and anything else I want to put out there.
+            </p>
+            <p>
+                My site has
+                <span>no ads</span>,
+                <span>no AI-generated content</span>,
+                <span>no affiliate links</span>,
+                <span>no sponsored posts</span>,<span>and no paywall</span>.
+                It's a space for self-expression and to share what I've learned
+                with the world. I hope I can inspire others to make their own
+                creative corner on the web in the uphill battle against the
+                <a href="https://en.wikipedia.org/wiki/Enshittification"
+                    >enshittification</a
+                > of the internet.
+            </p>
+            <p>
+                I wrote my first lines of code back in 2013 of HTML and CSS
+                using notepad. Like many people I graduated a few years later
+                and since then I've been on this adventure into the world of
+                programming.
+            </p>
+            <p>
+                I don't have "favorites", but i like to code on Java, Kotlin and
+                I'm starting to tiker with Golang. I also like to think outside
+                of coding, such prioritizing tasks/features, doing reviews and
+                providing the good practices, fundamentals, and consistency
+                throughout the code.
+            </p>
+            <p>I've worked on Android (Kotlin), iOS(Flutter) and backend.</p>
+            <p>
+                Personally, I'm into computers, playing video games, and
+                reading.
+            </p>
+        </div>
     </div>
 </Layout>
 
@@ -76,6 +121,23 @@ const avatar = `
         line-height: 1.2;
         font-family: inherit;
         white-space: pre;
-        border: 1px solid;
+        width: fit-content;
+        border: 3px solid var(--color-overlay);
+    }
+
+    .resume {
+        margin-top: var(--space-md);
+        a {
+            color: var(--color-gold);
+        }
+    }
+
+    .content {
+        span {
+            text-decoration: underline;
+        }
+        a {
+            color: var(--color-gold);
+        }
     }
 </style>

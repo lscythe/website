@@ -9,7 +9,10 @@
     "astro": "astro"
   },
   "dependencies": {
-    "astro": "^5.15.3"
+    "@astrojs/rss": "^4.0.13",
+    "@astrojs/sitemap": "^3.6.0",
+    "astro": "^5.15.3",
+    "ultrahtml": "^1.6.0"
   },
   "devDependencies": {
     "wrangler": "^4.45.4"
