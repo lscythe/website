@@ -1,0 +1,32 @@
+---
+import Layout from "../layouts/Layout.astro";
+
+const cfPolicy =
+    "https://developers.cloudflare.com/fundamentals/reference/policies-compliances/cloudflare-cookies/";
+---
+
+<Layout>
+    <div class="container">
+        <h2>Site information</h2>
+        <p>Owner: Rendra Prasetia</p>
+        <p>Site URI: https://lscythe.dev</p>
+        <p>
+            This website does not collect any personally identifiable
+            information. It is hosted and served via Cloudflare Workers.
+            Cloudflare may collect end-user IP addresses and basic request
+            metadata (such as browser type or country) for security, analytics,
+            and performance optimization purposes.
+        </p>
+        <p>
+            <a href={cfPolicy} target="_blank" rel="noopener noreferrer">
+                read more on cloudflare
+            </a>
+        </p>
+    </div>
+</Layout>
+
+<style>
+    .container {
+        margin: var(--space-xl);
+    }
+</style>

@@ -1,0 +1,69 @@
+---
+import quotes from "../data/quotes.json";
+
+const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
+const text = randomQuote.text;
+const author = randomQuote.author;
+const maxWidth = 50;
+
+function wrapText(str: string, width: any) {
+    const words = str.split(" ");
+    const lines = [];
+    let line = "";
+
+    for (const word of words) {
+        if ((line + word).length <= width) {
+            line += (line ? " " : "") + word;
+        } else {
+            lines.push(line);
+            line = word;
+        }
+    }
+    if (line) lines.push(line);
+    return lines;
+}
+
+const lines = wrapText(text, maxWidth);
+const longest = Math.max(...lines.map((l) => l.length));
+
+let bubble = "";
+if (lines.length === 1) {
+    const line = lines[0];
+    bubble = ` ${"_".repeat(line.length + 2)}\n< ${line} >\n ${"-".repeat(line.length + 2)}`;
+} else {
+    bubble = ` ${"_".repeat(longest + 2)}\n`;
+    lines.forEach((line, i) => {
+        const padding = " ".repeat(longest - line.length);
+        if (i === 0) bubble += `/ ${line}${padding} \\\n`;
+        else if (i === lines.length - 1) bubble += `\\ ${line}${padding} /\n`;
+        else bubble += `| ${line}${padding} |\n`;
+    });
+    bubble += ` ${"-".repeat(longest + 2)}`;
+}
+
+const cow = `
+${bubble}
+     \\
+      \\   ^__^
+       \\  (oo)\\_______
+          (__)\\       )\\/\\
+           U  ||----w |
+              ||     || - ${author}`;
+---
+
+<div class="quotes">
+    <pre class="cowsay">{cow}</pre>
+</div>
+
+<style>
+    .quotes {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .cowsay {
+        max-width: fit-content;
+        margin: 0;
+        padding: 0;
+    }
+</style>

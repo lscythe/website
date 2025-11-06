@@ -1,0 +1,34 @@
+---
+const currentYear = new Date().getFullYear();
+---
+
+<footer>
+    <div class="top">
+        <span>&COPY; {currentYear}</span>
+        <span><a href="/">lscythe.dev</a></span>
+        <span>-</span>
+        <span><a href="/privacy-policy">privacy policy</a></span>
+        <span>-</span>
+        <span><a href="/LICENSE">license</a></span>
+    </div>
+    <div class="bottom">
+        <span>built with &lt;3 on commit <a href="">asdasd</a></span>
+    </div>
+</footer>
+
+<style>
+    footer {
+        display: flex;
+        align-items: flex-start;
+        flex-direction: column;
+        padding: var(--space-lg);
+    }
+
+    .bottom {
+        margin: var(--space-md) 0 0;
+    }
+
+    a {
+        color: var(--color-iris);
+    }
+</style>

@@ -1,0 +1,86 @@
+---
+const { title } = Astro.props;
+
+const links = [
+    { label: "/about", href: "/about" },
+    { label: "/blog", href: "/blog" },
+    { label: "/projects", href: "/projects" },
+];
+
+const pathSegment = Astro.url.pathname.split("/").filter(Boolean);
+const breadcrumbSegment = pathSegment.map((segment, index, orig) => {
+    return {
+        label: decodeURIComponent(segment),
+        href: `/${orig.slice(0, index + 1).join("/")}`,
+        index,
+    };
+});
+---
+
+<header class="navbar">
+    <span class="label">
+        <a href="/">~</a><span class="separator">/</span>
+        {
+            title ??
+                breadcrumbSegment.map((segment) => (
+                    <a>
+                        {segment.index === 0 ? null : (
+                            <span class="separator">/</span>
+                        )}
+                        <span class="crumb">
+                            <a href={segment.href}>{segment.label}</a>
+                        </span>
+                    </a>
+                ))
+        }
+    </span>
+    <nav class="navbar-items">
+        <ul>
+            {
+                links.map((link) => (
+                    <li>
+                        <a href={link.href}>{link.label}</a>
+                    </li>
+                ))
+            }
+        </ul>
+    </nav>
+</header>
+
+<style>
+    .navbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: var(--space-lg);
+    }
+
+    .label {
+        display: flex;
+        align-items: center;
+        white-space: nowrap;
+        overflow: hidden;
+        .crumb {
+            display: inline-flex;
+        }
+        .separator {
+            padding: 0 var(--space-sm);
+        }
+        a {
+            text-decoration: none;
+        }
+    }
+
+    .navbar-items {
+        margin: 0 var(--space-sm);
+        ul,
+        li {
+            list-style: none;
+            display: flex;
+        }
+
+        ul {
+            gap: var(--space-lg);
+        }
+    }
+</style>
