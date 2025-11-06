@@ -6,24 +6,24 @@ const { title = "lscythe", label } = Astro.props;
 ---
 
 <!doctype html>
-<html lang="en" data-theme="rosepine-moon">
+<html lang="en">
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width" />
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
         <meta name="generator" content={Astro.generator} />
+        <script is:inline>
+            const theme = localStorage.getItem("theme") || "system";
+            document.documentElement.setAttribute("theme", theme);
+        </script>
         <title>{title}</title>
     </head>
     <body>
-        <div class="layout">
-            <Navbar title={label} />
-            <hr />
-            <main>
-                <slot />
-            </main>
-            <hr />
-            <Footer />
-        </div>
+        <Navbar title={label} />
+        <main>
+            <slot />
+        </main>
+        <Footer />
     </body>
 </html>
 
@@ -32,11 +32,20 @@ const { title = "lscythe", label } = Astro.props;
         background: var(--color-base);
     }
 
+    html,
     body {
-        background: var(--color-surface);
+        height: 100%;
+    }
+
+    body {
         max-width: var(--max-content-width);
         margin: 0 auto;
-        min-height: 100vh;
+    }
+
+    main {
+        display: flex;
+        flex-grow: 1;
+        padding-top: var(--space-2xl);
     }
 
     hr {

@@ -1,13 +1,9 @@
 @import url("https://fonts.cdnfonts.com/css/lilex");
-@import "rosepine.css";
 
 :root {
     --font: "Lilex", monospace;
 
     --max-content-width: 1280px;
-
-    --text-primary: #f2f2f2;
-    --text-secondary: #--size-xs: 0.25rem;
 
     --font-xs: 0.75rem;
     --font-sm: 0.875rem;
@@ -21,6 +17,32 @@
     --space-md: 1rem;
     --space-lg: 2rem;
     --space-xl: 4rem;
+    --space-2xl: 6rem;
+
+    color-scheme: light dark;
+    --color-base: light-dark(#faf4ed, #232136);
+    --color-surface: light-dark(#fffaf3, #2a273f);
+    --color-overlay: light-dark(#f2e9e1, #393552);
+    --color-muted: light-dark(#9893a5, #6e6a86);
+    --color-subtle: light-dark(#797593, #908caa);
+    --color-text: light-dark(#575279, #e0def4);
+    --color-love: light-dark(#b4637a, #eb6f92);
+    --color-gold: light-dark(#ea9d34, #f6c177);
+    --color-rose: light-dark(#d7827e, #ea9a97);
+    --color-pine: light-dark(#286983, #3e8fb0);
+    --color-foam: light-dark(#56949f, #9ccfd8);
+    --color-iris: light-dark(#907aa9, #c4a7e7);
+    --color-highlight-low: light-dark(#f4ede8, #2a283e);
+    --color-highlight-med: light-dark(#dfdad9, #44415a);
+    --color-highlight-high: light-dark(#cecacd, #56526e);
+
+    &[theme="dark"] {
+        color-scheme: dark;
+    }
+
+    &[theme="light"] {
+        color-scheme: light;
+    }
 }
 
 * {
@@ -32,6 +54,12 @@ body {
     font-family: var(--font);
     font-size: var(--font-md);
     color: var(--color-text);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    :root {
+        scroll-behavior: smooth;
+    }
 }
 
 h1,
@@ -53,5 +81,11 @@ a {
 }
 
 .container {
-    margin: var(--space-lg);
+    margin: var(--space-lg) var(--space-xl);
+}
+
+hr {
+    background: var(--color-overlay);
+    height: 4px;
+    border: none;
 }

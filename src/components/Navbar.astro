@@ -1,4 +1,6 @@
 ---
+import Menu from "../assets/menu.svg";
+
 const { title } = Astro.props;
 
 const links = [
@@ -34,25 +36,40 @@ const breadcrumbSegment = pathSegment.map((segment, index, orig) => {
                 ))
         }
     </span>
+    <button
+        popovertarget="navbar-mobile"
+        title="menu"
+        aria-label="toggle navigation"
+    >
+        <Menu />
+    </button>
+    <nav popover id="navbar-mobile">
+        <div class="links">
+            {links.map((link) => <a href={link.href}>{link.label}</a>)}
+        </div>
+    </nav>
     <nav class="navbar-items">
-        <ul>
-            {
-                links.map((link) => (
-                    <li>
-                        <a href={link.href}>{link.label}</a>
-                    </li>
-                ))
-            }
-        </ul>
+        {links.map((link) => <a href={link.href}>{link.label}</a>)}
     </nav>
 </header>
 
 <style>
-    .navbar {
+    header {
         display: flex;
+        position: fixed;
+        max-width: var(--max-content-width);
         justify-content: space-between;
-        align-items: center;
+        width: 100%;
         padding: var(--space-lg);
+        z-index: 2;
+        transition: transform 0.2s ease;
+        border-bottom: 3px solid var(--color-overlay);
+        background: var(--color-base);
+
+        &[scroll-direction="down"] {
+            transform: translateY(-100%);
+            pointer-events: none;
+        }
     }
 
     .label {
@@ -71,16 +88,73 @@ const breadcrumbSegment = pathSegment.map((segment, index, orig) => {
         }
     }
 
+    button {
+        all: unset;
+        cursor: pointer;
+        color: var(--color-text);
+
+        &:hover {
+            color: var(--color-highlight-mid);
+        }
+    }
+
+    #navbar-mobile[popover] {
+        top: calc(2rlh + 1lh);
+        background-color: var(--color-base);
+        border: none;
+        width: 100%;
+        max-width: var(--max-content-width);
+        margin: 0 auto;
+    }
+
+    .links {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        width: 100%;
+        padding: var(--space-md) var(--space-lg);
+        gap: var(--space-md);
+    }
+
+    #navbar-mobile:popover-open {
+        display: flex;
+        border-bottom: 1px solid var(--color-surface);
+    }
+
     .navbar-items {
-        margin: 0 var(--space-sm);
-        ul,
-        li {
-            list-style: none;
-            display: flex;
+        display: none;
+    }
+
+    @media (width >= 768px) {
+        button[popovertarget="navbar-mobile"],
+        #navbar-mobile[popover] {
+            display: none;
         }
 
-        ul {
+        .navbar-items {
+            display: flex;
             gap: var(--space-lg);
         }
     }
 </style>
+
+<script>
+    const header = document.querySelector<HTMLElement>(".navbar");
+    const mobileMenu = document.querySelector<HTMLElement>("#navbar-mobile");
+    let lastScrollTop = 0;
+
+    window.addEventListener(
+        "scroll",
+        () => {
+            const scrollTop =
+                window.scrollY || document.documentElement.scrollTop;
+            const dir = scrollTop > lastScrollTop ? "down" : "up";
+            if (Math.abs(scrollTop - lastScrollTop) > 3) {
+                header?.setAttribute("scroll-direction", dir);
+            }
+            lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
+            mobileMenu?.hidePopover();
+        },
+        { passive: true },
+    );
+</script>

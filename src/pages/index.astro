@@ -1,12 +1,62 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import Cowsay from "../components/Cowsay.astro";
+
+const socialHandler = [
+    { label: "github", href: "https://github.com/lscythe" },
+    { label: "forgejo", href: "https://git.lscythe.dev/lscythe" },
+    { label: "linkedin", href: "https://www.linkedin.com/in/lscythe" },
+    { label: "telegram", href: "https://t.me/Porororo69" },
+    { label: "email", href: "mailto:rendrati15c@gmail.com" },
+];
 ---
 
 <Layout>
     <div class="container">
         <Cowsay />
         <h2>Hello World!</h2>
-        <p>Me Gusta</p>
+        <p>
+            Welcome to my humble website, feel free to explore as much as you
+            want.
+        </p>
+        <p>
+            I'm Rendra, welcome to my humble website. I am a
+            <strong>Software Engineer</strong> heavy focused on mobile development,
+            currently looking into learning new things.
+        </p>
+        <span>Here are some links where you can reach me:</span>
+        <div class="social">
+            <ul>
+                {
+                    socialHandler.map((social) => (
+                        <li>
+                            <a
+                                href={social.href}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                {social.label}
+                            </a>
+                        </li>
+                    ))
+                }
+            </ul>
+        </div>
     </div>
 </Layout>
+
+<style>
+    ul,
+    li {
+        list-style: none;
+        display: flex;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: var(--space-md);
+        padding: 0;
+    }
+
+    a {
+        color: var(--color-foam);
+    }
+</style>

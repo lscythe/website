@@ -38,7 +38,7 @@ if (lines.length === 1) {
         else if (i === lines.length - 1) bubble += `\\ ${line}${padding} /\n`;
         else bubble += `| ${line}${padding} |\n`;
     });
-    bubble += ` ${"-".repeat(longest + 2)}`;
+    bubble += ` ${"_".repeat(longest + 2)}`;
 }
 
 const cow = `
@@ -60,10 +60,15 @@ ${bubble}
         display: flex;
         align-items: center;
         justify-content: center;
+        border: solid 1px;
+        padding-bottom: var(--space-md);
     }
     .cowsay {
-        max-width: fit-content;
+        max-width: 100%;
         margin: 0;
         padding: 0;
+        white-space: pre-wrap;
+        word-break: break-word;
+        font-size: clamp(0.2rem, 2vw, 1rem);
     }
 </style>

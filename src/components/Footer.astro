@@ -17,7 +17,15 @@ const gitUrl = `https://git.lscythe.dev/lscythe/website/commit/${commitHash}`;
         <span>
             built with &lt;3 on commit: <a href={gitUrl}>{commitHash}</a>
         </span>
-        <p>theme by <a href="https://rosepinetheme.com/"></a>Rosé Pine</p>
+        <p>
+            theme [
+            <select name="theme" id="theme-select">
+                <option value="system">system</option>
+                <option value="dark">moon</option>
+                <option value="light">dawn</option>
+            </select>
+            ] by <a href="https://rosepinetheme.com/">Rosé Pine</a>
+        </p>
     </div>
 </footer>
 
@@ -27,6 +35,15 @@ const gitUrl = `https://git.lscythe.dev/lscythe/website/commit/${commitHash}`;
         align-items: flex-start;
         flex-direction: column;
         padding: var(--space-lg);
+        max-width: var(--max-content-width);
+        margin: 0 auto;
+        border-top: 3px solid var(--color-overlay);
+    }
+
+    .top {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-sm);
     }
 
     .bottom {
@@ -36,4 +53,26 @@ const gitUrl = `https://git.lscythe.dev/lscythe/website/commit/${commitHash}`;
     a {
         color: var(--color-iris);
     }
+
+    select {
+        background: none;
+        border: none;
+        padding: 0;
+        margin: 0 -0.5rem;
+        font-family: inherit;
+        font-size: inherit;
+    }
 </style>
+
+<script is:inline>
+    const select = document.querySelector("#theme-select");
+    if (!select) throw new Error("Theme selector missing");
+    select.value = localStorage.getItem("theme") || "system";
+
+    const set_theme = (theme) => {
+        document.documentElement.setAttribute("theme", theme);
+        localStorage.setItem("theme", theme);
+    };
+
+    select.onchange = () => set_theme(select.value);
+</script>
