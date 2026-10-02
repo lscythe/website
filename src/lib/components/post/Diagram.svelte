@@ -12,10 +12,12 @@
     .diagram {
         --d-bg: var(--paper-raised);
         --d-bg-soft: color-mix(in srgb, var(--paper-raised) 50%, transparent);
-        --d-surface: color-mix(in srgb, var(--ink) 18%, var(--paper));
+        --d-surface: color-mix(in srgb, var(--ink) 28%, var(--paper));
         --d-text: var(--ink);
         --d-sub: var(--ink-soft);
-        --d-line: var(--ink-faint);
+        /* Muted greys for borders, axes and de-emphasised nodes: lighter than
+           the page's --ink-faint so they stay legible on the night background. */
+        --d-line: light-dark(#6f665e, #9a9087);
         --d-red: var(--blood);
         --d-yellow: var(--string);
         --d-blue: light-dark(#2f5d7c, #8fb3d9);
