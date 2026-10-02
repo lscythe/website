@@ -1,4 +1,5 @@
 import type { Component } from "svelte";
+import { loadBody } from "./post-bodies";
 
 export interface PostMeta {
   title: string;
@@ -23,25 +24,27 @@ export interface Series {
   posts: Post[];
 }
 
-type PostModule = { metadata: PostMeta; default: Component };
-
 /** Markdown posts live in src/posts/, optionally grouped into series folders. */
-const modules = import.meta.glob<PostModule>("/src/posts/**/*.md", { eager: true });
+// Server-side only: importing this eagerly pulls in every post, so routes read it
+// through +page.server.ts and the browser loads bodies via post-bodies.ts.
+const metadata = import.meta.glob<PostMeta>("/src/posts/**/*.md", { eager: true, import: "metadata" });
 
 const slugOf = (path: string) => path.replace(/^\/src\/posts\//, "").replace(/\.md$/, "");
 
-const published = Object.entries(modules)
-  .map(([path, mod]) => ({ meta: { ...mod.metadata, slug: slugOf(path) } as Post, content: mod.default }))
-  .filter(({ meta }) => !meta.draft);
+const published: Post[] = Object.entries(metadata)
+  .map(([path, meta]) => ({ ...meta, slug: slugOf(path) }))
+  .filter((post) => !post.draft);
 
 const byDateDesc = (a: Post, b: Post) => +new Date(b.pubDate) - +new Date(a.pubDate);
 
 export function getPosts(): Post[] {
-  return published.map(({ meta }) => meta).sort(byDateDesc);
+  return [...published].sort(byDateDesc);
 }
 
-export function getPost(slug: string): { meta: Post; content: Component } | undefined {
-  return published.find(({ meta }) => meta.slug === slug);
+export async function getPost(slug: string): Promise<{ meta: Post; content: Component } | undefined> {
+  const meta = published.find((post) => post.slug === slug);
+  if (!meta) return undefined;
+  return { meta, content: await loadBody(slug) };
 }
 
 /** Series ordered by their newest part; posts outside a series are left out. */

@@ -1,6 +1,6 @@
 <script lang="ts">
     import Seo from "$lib/components/Seo.svelte";
-    import { EXPERIENCE } from "$lib/experience";
+    import { EXPERIENCE, EXPERIENCE_INTRO } from "$lib/experience";
     import { NUMERALS } from "$lib/site";
 
     // Split on `backticks` so recovered text can carry inline code safely.
@@ -19,6 +19,7 @@
     <div>
         <span class="eyebrow">the path walked so far</span>
         <h1>Experience</h1>
+        <p class="intro">{EXPERIENCE_INTRO}</p>
 
         <ol class="roles">
             {#each EXPERIENCE as role, i}
@@ -43,7 +44,11 @@
                             {#each role.projects as project}
                                 <section class="project">
                                     <h3>
-                                        {project.name}
+                                        {#if project.url}
+                                            <a href={project.url} target="_blank" rel="noopener noreferrer">{project.name} <span aria-hidden="true">↗</span></a>
+                                        {:else}
+                                            {project.name}
+                                        {/if}
                                         {#if project.status}<span class="status">{project.status}</span>{/if}
                                     </h3>
                                     <ul class="tech" aria-label="Tech used">
@@ -65,6 +70,23 @@
 </div>
 
 <style>
+    .intro {
+        font-family: var(--font-serif);
+        font-style: italic;
+        font-size: var(--font-xl);
+        color: var(--ink-soft);
+    }
+
+    .project h3 a {
+        text-decoration: none;
+
+        span {
+            font-size: 0.6em;
+            vertical-align: super;
+            color: var(--blood);
+        }
+    }
+
     .roles {
         list-style: none;
         margin: var(--space-xl) 0 0;
