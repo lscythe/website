@@ -34,6 +34,8 @@
     --figure: light-dark(#141110, #050404);
     --figure-edge: light-dark(transparent, #6f655c);
     --figure-light: light-dark(rgb(232 226 214 / 0.35), rgb(221 212 198 / 0.3));
+    --string: light-dark(#7a5a1e, #c9a66b);
+    --number: light-dark(#8a3b52, #e07a8e);
     --glow: light-dark(rgb(179 20 28 / 0.45), rgb(211 19 31 / 0.75));
 
     &[theme="dark"] {
@@ -180,7 +182,7 @@ hr {
 
 @media (width < 768px) {
     .container {
-        padding: var(--space-2xl) var(--space-md) var(--space-lg);
+        padding: 5rem var(--space-md) var(--space-lg);
     }
 }
 

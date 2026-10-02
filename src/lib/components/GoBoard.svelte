@@ -116,8 +116,23 @@
             0 0 0 1px color-mix(in srgb, var(--ink) 20%, transparent);
         transition: transform 0.8s cubic-bezier(0.7, 0, 0.2, 1);
 
-        &:hover {
-            transform: rotateX(36deg) rotateZ(-6deg);
+        @media (hover: hover) {
+            &:hover {
+                transform: rotateX(36deg) rotateZ(-6deg);
+            }
+        }
+    }
+
+    @media (width < 768px) {
+        .table {
+            margin-top: calc(-1 * var(--space-lg));
+            perspective: 700px;
+        }
+
+        .board {
+            width: 100%;
+            transform: rotateX(28deg);
+            transform-origin: 50% 100%;
         }
     }
 

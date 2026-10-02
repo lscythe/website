@@ -5,7 +5,7 @@
     const THEMES = [
         { value: "light", glyph: "墨", label: "Paper" },
         { value: "dark", glyph: "魔", label: "Night" },
-        { value: "system", glyph: "自", label: "As your device" },
+        { value: "system", glyph: "自", label: "Auto" },
     ];
 
     let years = $state(`${inceptionYear}`);
@@ -27,9 +27,8 @@
 <footer>
     <div class="brush" aria-hidden="true">一剑霜寒</div>
     <div class="rows">
+        <span>&copy; {years} Rendra Prasetia</span>
         <div class="top">
-            <span>&copy; {years} Rendra Prasetia</span>
-            <span class="dot">·</span>
             <a href="/privacy-policy">Privacy</a>
             <span class="dot">·</span>
             <a href="/LICENSE" data-sveltekit-reload>License</a>
@@ -42,7 +41,7 @@
                     <button
                         type="button"
                         aria-pressed={theme === t.value}
-                        title={t.label}
+                        title={t.value === "system" ? "Follow your device" : t.label}
                         onclick={() => setTheme(t.value)}
                     >
                         <span class="glyph" aria-hidden="true">{t.glyph}</span>
@@ -68,6 +67,16 @@
         padding: var(--space-xl) var(--space-lg) var(--space-lg);
         color: var(--ink-soft);
         overflow: hidden;
+    }
+
+    @media (width < 768px) {
+        footer {
+            padding: var(--space-lg) var(--space-md) var(--space-md);
+        }
+
+        footer::before {
+            inset-inline: var(--space-md);
+        }
     }
 
     footer::before {
@@ -163,5 +172,16 @@
 
     .credit {
         font-style: italic;
+    }
+
+    @media (width < 400px) {
+        .themes {
+            gap: var(--space-xs);
+        }
+
+        button {
+            padding: 0.1em 0.5em 0.1em 0.15em;
+            font-size: 1rem;
+        }
     }
 </style>

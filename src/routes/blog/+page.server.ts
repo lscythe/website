@@ -1,5 +1,8 @@
-import { getPosts } from "$lib/posts";
+import { getPosts, getSeries } from "$lib/posts";
 
 export function load() {
-  return { posts: getPosts() };
+  return {
+    series: getSeries(),
+    loose: getPosts().filter((post) => !post.series),
+  };
 }

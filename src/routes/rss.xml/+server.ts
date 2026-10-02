@@ -10,16 +10,17 @@ const escape = (s: string) =>
 /** Make root-relative links and images absolute so feed readers can follow them. */
 const absolutise = (html: string) => html.replace(/(href|src)="\//g, `$1="${SITE_URL}/`);
 
-export function GET() {
-  const items = getPosts()
-    .map((post) => {
-      const content = absolutise(render(getPost(post.slug)!.content).body);
+export async function GET() {
+  const posts = await Promise.all(getPosts().map(async (post) => ({ post, ...(await getPost(post.slug))! })));
+  const items = posts
+    .map(({ post, content: Content }) => {
+      const content = absolutise(render(Content).body);
       const link = `${SITE_URL}/blog/${post.slug}`;
       return `    <item>
       <title>${escape(post.title)}</title>
       <link>${link}</link>
       <guid isPermaLink="true">${link}</guid>
-      <description>${escape(post.description)}</description>
+      <description>${escape(post.description ?? "")}</description>
       <pubDate>${new Date(post.pubDate).toUTCString()}</pubDate>
       <content:encoded><![CDATA[${content.replace(/]]>/g, "]]]]><![CDATA[>")}]]></content:encoded>
     </item>`;

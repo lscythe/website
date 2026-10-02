@@ -5,13 +5,14 @@ export const SITE_DESCRIPTION =
 
 export const NAV_LINKS = [
   { label: "About", href: "/about", glyph: "我" },
+  { label: "Experience", href: "/experience", glyph: "历" },
   { label: "Writings", href: "/blog", glyph: "书" },
   { label: "Projects", href: "/projects", glyph: "棋" },
 ];
 
 export const SOCIALS = [
   { label: "github", href: "https://github.com/lscythe" },
-  { label: "forgejo", href: "https://git.lscythe.dev/lscythe" },
+  { label: "gitea", href: "https://git.lscythe.dev/lscythe" },
   { label: "linkedin", href: "https://www.linkedin.com/in/lscythe" },
   { label: "telegram", href: "https://t.me/Porororo69" },
   { label: "email", href: "mailto:rendrati15c@gmail.com" },

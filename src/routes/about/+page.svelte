@@ -12,7 +12,7 @@
     <div>
         <div class="portrait">
             <HangingScroll seed={data.seed} caption="The wanderer — painted anew with every build." />
-            <a href="/resume.pdf" data-sveltekit-reload>View Resume</a>
+            <a href="/experience">Read my experience</a>
         </div>
 
         <div class="content">
@@ -28,7 +28,7 @@
             <p>
                 My site has
                 <span class="vow">no ads</span>,
-                <span class="vow">no AI-generated content</span>,
+                <span class="vow">no AI-written posts</span>,
                 <span class="vow">no affiliate links</span>,
                 <span class="vow">no sponsored posts</span>, <span class="vow">and no paywall</span>.
                 It's a space for self-expression and to share what I've learned with the world. I
@@ -50,6 +50,15 @@
             </p>
             <p>I've worked on Android (Kotlin), iOS(Flutter) and backend.</p>
             <p>Personally, I'm into computers, playing video games, and reading.</p>
+
+            <aside class="colophon">
+                <span class="seal" aria-hidden="true">实</span>
+                <p>
+                    In honesty: this version of the site, its design, the generated ink landscapes
+                    and the code behind them, was built together with an AI assistant. The words
+                    about me, and everything I write here, are my own.
+                </p>
+            </aside>
         </div>
     </div>
 </div>
@@ -71,6 +80,42 @@
         font-family: var(--font-serif);
         font-size: clamp(1.3rem, 2.5vw, 1.8rem);
         line-height: 1.35;
+    }
+
+    .colophon {
+        display: flex;
+        gap: var(--space-md);
+        align-items: flex-start;
+        margin-top: var(--space-xl);
+        padding: var(--space-md) var(--space-lg);
+        border-left: 2px solid var(--blood);
+        background: var(--paper-raised);
+
+        p {
+            margin: 0;
+            font-style: italic;
+            color: var(--ink-soft);
+        }
+    }
+
+    @media (width < 600px) {
+        .colophon {
+            gap: var(--space-sm);
+            padding: var(--space-md);
+        }
+    }
+
+    .seal {
+        flex: none;
+        display: grid;
+        place-items: center;
+        width: 1.9rem;
+        height: 1.9rem;
+        background: var(--blood);
+        color: var(--seal-text);
+        font-family: var(--font-brush);
+        font-size: 1.2rem;
+        border-radius: 3px;
     }
 
     .vow {
