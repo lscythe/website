@@ -11,7 +11,7 @@
 
 <Landscape seed={data.seed} />
 
-<div class="container">
+<div class="container chapters">
     <section id="prelude" class="chapter">
         <header>
             <span class="num">{NUMERALS[0]}</span>
@@ -137,10 +137,23 @@
         transition: transform 0.3s;
     }
 
+    .chapters {
+        padding-top: var(--space-lg);
+    }
+
     @media (width < 600px) {
+        .chapters {
+            padding-top: 0;
+        }
+
         .chapter {
             grid-template-columns: 1fr;
             gap: var(--space-md);
+            padding: var(--space-lg) 0;
+        }
+
+        .paths a {
+            padding: var(--space-sm) 0;
         }
 
         .eyebrow {

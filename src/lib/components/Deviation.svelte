@@ -49,6 +49,13 @@
     @media (width < 700px) {
         .deviation {
             grid-template-columns: 1fr;
+            gap: var(--space-lg);
+            align-content: center;
+        }
+
+        .glyphs {
+            width: fit-content;
+            font-size: clamp(3.5rem, 22vw, 6rem);
         }
     }
 

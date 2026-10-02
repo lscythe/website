@@ -171,6 +171,12 @@
         font-size: var(--font-lg);
     }
 
+    @media (width < 768px) {
+        header {
+            padding: var(--space-sm) var(--space-md);
+        }
+    }
+
     @media (width >= 768px) {
         button,
         #nav-mobile {

@@ -180,7 +180,7 @@ hr {
 
 @media (width < 768px) {
     .container {
-        padding: var(--space-2xl) var(--space-md) var(--space-lg);
+        padding: 5rem var(--space-md) var(--space-lg);
     }
 }
 

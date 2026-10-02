@@ -66,7 +66,9 @@
 
     <div class="caption">
         <p class="name">lscythe <em>— a wanderer of the crooked path</em></p>
-        <p class="seed">Painting <span>No. {seed}</span> — press the seal to paint the world anew</p>
+        <p class="seed">
+            Painting <span>No. {seed}</span><span class="hint"> — press the seal to paint the world anew</span>
+        </p>
     </div>
 
     <a class="descend" href="#prelude" aria-label="scroll to content">
@@ -277,6 +279,23 @@
         .title {
             right: auto;
             left: clamp(1rem, 6vw, 3rem);
+        }
+
+        .hero::after {
+            height: 38%;
+        }
+
+        .caption {
+            right: 3.5rem;
+        }
+
+        .name em {
+            display: block;
+            font-size: 0.75em;
+        }
+
+        .hint {
+            display: none;
         }
     }
 
