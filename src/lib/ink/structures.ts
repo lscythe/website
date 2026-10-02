@@ -3,7 +3,6 @@ import { between } from "./random";
 import type { Painter } from "./landscape";
 
 const r = (n: number) => Math.round(n * 10) / 10;
-const pts = (list: Pt[]) => list.map(([x, y]) => `${r(x)} ${r(y)}`).join(" ");
 
 /** A sweeping roof with upturned eaves, the defining line of Chinese buildings. */
 function roof(p: Painter, cx: number, eaveY: number, w: number, h: number, cls = "ink") {
@@ -198,5 +197,3 @@ export function splatter(p: Painter, x: number, y: number, spread: number, count
   }
   out.push(`<g class="ink-faint">${dots.join("")}</g>`);
 }
-
-export { pts as pointList };
