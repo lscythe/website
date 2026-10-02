@@ -12,7 +12,7 @@
     <div>
         <div class="portrait">
             <HangingScroll seed={data.seed} caption="The wanderer — painted anew with every build." />
-            <a href="/resume.pdf" data-sveltekit-reload>View Resume</a>
+            <a href="/experience">Read my experience</a>
         </div>
 
         <div class="content">

@@ -5,6 +5,7 @@ export const SITE_DESCRIPTION =
 
 export const NAV_LINKS = [
   { label: "About", href: "/about", glyph: "我" },
+  { label: "Experience", href: "/experience", glyph: "历" },
   { label: "Writings", href: "/blog", glyph: "书" },
   { label: "Projects", href: "/projects", glyph: "棋" },
 ];

@@ -3,7 +3,7 @@ import { SITE_URL } from "$lib/site";
 
 export const prerender = true;
 
-const PAGES = ["/", "/about", "/blog", "/projects", "/privacy-policy"];
+const PAGES = ["/", "/about", "/experience", "/blog", "/projects", "/privacy-policy"];
 
 export function GET() {
   const urls = [...PAGES, ...getPosts().map((post) => `/blog/${post.slug}`)];
