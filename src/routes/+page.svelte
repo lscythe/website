@@ -7,7 +7,7 @@
     let { data } = $props();
 </script>
 
-<Seo title="lscythe" />
+<Seo />
 
 <Landscape seed={data.seed} />
 

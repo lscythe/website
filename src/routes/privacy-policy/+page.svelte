@@ -5,7 +5,7 @@
         "https://developers.cloudflare.com/fundamentals/reference/policies-compliances/cloudflare-cookies/";
 </script>
 
-<Seo title="privacy-policy" />
+<Seo title="Privacy policy" />
 
 <div class="container folio">
     <div class="folio-mark" aria-hidden="true">戒律</div>

@@ -5,7 +5,7 @@
     let { data } = $props();
 </script>
 
-<Seo title="projects" />
+<Seo title="Projects" />
 
 <div class="container folio">
     <div class="folio-mark" aria-hidden="true">残局</div>

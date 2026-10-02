@@ -15,7 +15,7 @@
     const empty = $derived(data.series.length === 0 && data.loose.length === 0);
 </script>
 
-<Seo title="writings" description="Series and notes on Android, architecture and the craft." />
+<Seo title="Writings" description="Series and notes on Android, architecture and the craft." />
 
 <div class="container folio">
     <div class="folio-mark" aria-hidden="true">手记</div>

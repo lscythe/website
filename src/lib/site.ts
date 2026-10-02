@@ -1,4 +1,6 @@
 export const SITE_TITLE = "lscythe";
+/** Shown after the name on the home page tab: "lscythe · 魔道". */
+export const SITE_TAGLINE = "魔道";
 export const SITE_URL = "https://lscythe.dev";
 export const SITE_DESCRIPTION =
   "My humble website - It's a space for self-expression and to share what I've learned with the world";

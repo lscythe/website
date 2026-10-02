@@ -8,7 +8,7 @@
         text.split("`").map((value, i) => ({ value, code: i % 2 === 1 }));
 </script>
 
-<Seo title="experience" description="Professional experience and selected projects" />
+<Seo title="Experience" description="Professional experience and selected projects" />
 
 {#snippet rich(text: string)}
     {#each parts(text) as part}{#if part.code}<code>{part.value}</code>{:else}{part.value}{/if}{/each}
