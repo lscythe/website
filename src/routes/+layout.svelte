@@ -11,8 +11,13 @@
     import Nav from "$lib/components/Nav.svelte";
     import Footer from "$lib/components/Footer.svelte";
     import InkTrail from "$lib/components/InkTrail.svelte";
+    import InkAmbient from "$lib/components/InkAmbient.svelte";
+    import { onMount } from "svelte";
+    import { initTheme } from "$lib/theme.svelte";
 
     let { children } = $props();
+
+    onMount(initTheme);
 </script>
 
 <a class="skip" href="#main">skip to content</a>
@@ -22,6 +27,7 @@
 </main>
 <Footer />
 <InkTrail />
+<InkAmbient />
 
 <style>
     main {

@@ -219,7 +219,8 @@ hr {
 
     .folio-mark {
         writing-mode: horizontal-tb;
-        position: static;
+        position: relative;
+        width: fit-content;
     }
 }
 
@@ -253,5 +254,241 @@ hr {
     }
     .sun {
         fill: var(--blood);
+    }
+}
+
+/* ------------------------------------------------------------------ */
+/* Day / night only elements (cranes vs bats, sun vs moon).            */
+/* ------------------------------------------------------------------ */
+
+.night-only {
+    display: none;
+}
+
+:root[theme="dark"] {
+    .night-only {
+        display: inline;
+    }
+
+    .day-only {
+        display: none;
+    }
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([theme="light"]) {
+        .night-only {
+            display: inline;
+        }
+
+        .day-only {
+            display: none;
+        }
+    }
+}
+
+/* Buildings, trees and washes in the hand-scroll. */
+.ink-scene {
+    .paper-stroke {
+        fill: var(--paper);
+        opacity: 0.5;
+    }
+    .ink-soft-line {
+        stroke: var(--ink);
+        stroke-width: 1;
+    }
+    .smoke {
+        fill: var(--ink);
+        opacity: 0.16;
+    }
+    .blossom {
+        fill: var(--blood);
+    }
+    .pomo {
+        fill: var(--wash);
+        opacity: 0.32;
+    }
+    .pomo-near {
+        opacity: 0.2;
+    }
+    .lantern {
+        fill: var(--blood);
+    }
+    .window {
+        fill: var(--ink);
+        opacity: 0.55;
+    }
+}
+
+/* At night the lanterns and windows are lit. */
+:root[theme="dark"] .ink-scene {
+    .lantern,
+    .window {
+        fill: #ff5a2a;
+        opacity: 1;
+        filter: drop-shadow(0 0 6px #ff3b1f);
+    }
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([theme="light"]) .ink-scene {
+        .lantern,
+        .window {
+            fill: #ff5a2a;
+            opacity: 1;
+            filter: drop-shadow(0 0 6px #ff3b1f);
+        }
+    }
+}
+
+/* ------------------------------------------------------------------ */
+/* Theme change: the new page soaks through from the toggle like ink.  */
+/* ------------------------------------------------------------------ */
+
+::view-transition-old(root),
+::view-transition-new(root) {
+    animation: none;
+    mix-blend-mode: normal;
+}
+
+::view-transition-new(root) {
+    mask-image: url("/ink-wash.svg");
+    mask-repeat: no-repeat;
+    mask-size: 0 0;
+    mask-position: var(--vt-x, 50vw) var(--vt-y, 0);
+    animation: ink-wash 1.1s cubic-bezier(0.55, 0, 0.25, 1) forwards;
+}
+
+@keyframes ink-wash {
+    from {
+        mask-size: 0 0;
+        mask-position: var(--vt-x, 50vw) var(--vt-y, 0);
+    }
+    to {
+        /* The splash's solid core is ~30% of its box; 520vmax covers any corner. */
+        mask-size: 520vmax 520vmax;
+        mask-position: calc(var(--vt-x, 50vw) - 260vmax) calc(var(--vt-y, 0px) - 260vmax);
+    }
+}
+
+/* ------------------------------------------------------------------ */
+/* Brush strokes and ink splashes. Shapes are masks (static/ink/*), so */
+/* they take the theme's ink or blood colour.                          */
+/* ------------------------------------------------------------------ */
+
+/* A horizontal brush stroke used as a rule between sections. */
+.ink-rule {
+    display: block;
+    width: min(100%, 44rem);
+    height: 0.9rem;
+    margin: 0;
+    border: 0;
+    background: var(--ink);
+    opacity: 0.5;
+    mask: url("/ink/stroke-1.svg") no-repeat left center / 100% 100%;
+    transition: clip-path 1.4s cubic-bezier(0.6, 0, 0.2, 1);
+
+    &.alt {
+        mask-image: url("/ink/stroke-2.svg");
+    }
+
+    &.blood {
+        background: var(--blood);
+        opacity: 0.8;
+    }
+}
+
+/* A splashed blot, sized by --size, sitting behind whatever it decorates. */
+.ink-splash {
+    --size: 10rem;
+    position: absolute;
+    width: var(--size);
+    height: var(--size);
+    pointer-events: none;
+    background: var(--ink);
+    opacity: 0.1;
+    mask: url("/ink/splash-1.svg") no-repeat center / contain;
+    transition:
+        transform 1.8s cubic-bezier(0.2, 0.8, 0.2, 1),
+        opacity 1.8s ease;
+
+    &.two {
+        mask-image: url("/ink/splash-2.svg");
+    }
+
+    &.three {
+        mask-image: url("/ink/splash-3.svg");
+    }
+
+    &.blood {
+        background: var(--blood);
+        opacity: 0.16;
+    }
+}
+
+/* Scroll reveals: the layout adds .ink-pending until the element is seen.
+   Without script nothing is pending, so everything simply shows. */
+.ink-rule.ink-pending {
+    clip-path: inset(0 100% 0 0);
+}
+
+.ink-splash.ink-pending {
+    opacity: 0;
+    transform: scale(0.3) rotate(-20deg);
+}
+
+/* Page titles get a red stroke painted under them on arrival. */
+.folio h1::after {
+    content: "";
+    display: block;
+    width: min(8em, 90%);
+    height: 0.28em;
+    margin-top: 0.12em;
+    background: var(--blood);
+    mask: url("/ink/stroke-2.svg") no-repeat left center / 100% 100%;
+    animation: paint-in 1.3s 0.25s cubic-bezier(0.6, 0, 0.2, 1) both;
+}
+
+/* The big brush folio mark sits in a splash of blood-red ink. */
+.folio-mark {
+    isolation: isolate;
+}
+
+.folio-mark::before {
+    content: "";
+    position: absolute;
+    inset: -35% -55%;
+    z-index: -1;
+    background: var(--blood);
+    opacity: 0.12;
+    mask: url("/ink/splash-2.svg") no-repeat center / contain;
+    animation: bloom 1.8s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes paint-in {
+    from {
+        clip-path: inset(0 100% 0 0);
+    }
+    to {
+        clip-path: inset(0 0 0 0);
+    }
+}
+
+@keyframes bloom {
+    from {
+        opacity: 0;
+        transform: scale(0.3) rotate(-25deg);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .folio h1::after,
+    .folio-mark::before {
+        animation: none;
+    }
+
+    .ink-rule,
+    .ink-splash {
+        transition: none;
     }
 }

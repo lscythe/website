@@ -3,9 +3,31 @@
 <script lang="ts">
     // A wandering cultivator in a bamboo hat, cloak and ribbons torn by the wind,
     // a sword across the back. Feet sit at (x, y); the figure faces the sun.
-    let { x, y, scale = 1.25 }: { x: number; y: number; scale?: number } = $props();
+    import type { Pose } from "$lib/ink/world";
+
+    let {
+        x,
+        y,
+        scale = 1.25,
+        pose = "stand",
+        step = 0,
+    }: { x: number; y: number; scale?: number; pose?: Pose; step?: number } = $props();
+
+    // Legs swing from the hip; the body bobs with each stride.
+    const legs = $derived.by(() => {
+        if (pose === "walk") {
+            const a = Math.sin(step) * 26;
+            return { back: -a, front: a, lift: -Math.abs(Math.cos(step)) * 1.6 };
+        }
+        if (pose === "jump") return { back: -34, front: 40, lift: -2 };
+        if (pose === "crouch") return { back: -20, front: 24, lift: 4 };
+        return { back: -11, front: 13, lift: 0 };
+    });
+    // While waiting the wanderer lifts their head toward the sky.
+    const look = $derived(pose === "wait" ? -9 : 0);
 
     const wind = (a: string, b: string) => `${a};${b};${a}`;
+    const LEG = "M-2.8 -31L-3.4 -14-4 -1.2-9.6 -0.6-9.6 1.4 3.4 1.4 3.2 -1 1.8 -1.8 2 -14 3.2 -31Z";
 
     const ribbonA = [
         "M-13 -64C-24 -71-35 -57-52 -66-60 -70-66 -64-74 -67-64 -61-55 -63-46 -60-31 -56-23 -64-13 -62Z",
@@ -39,6 +61,7 @@
 </script>
 
 <g class="wanderer" transform="translate({x} {y}) scale({scale})">
+<g transform="translate(0 {legs.lift})">
     <!-- Behind the body: wash-toned underlayer of the cloak, ribbons, hair. -->
     <path class="shade" d={cloakShadow[0]}>
         <animate attributeName="d" dur="3.8s" repeatCount="indefinite" values={wind(cloakShadow[0], cloakShadow[1])} />
@@ -65,8 +88,13 @@
         <animate attributeName="d" dur="1.8s" repeatCount="indefinite" values={wind(tassel[0], tassel[1])} />
     </path>
 
-    <!-- Legs and boots in a wide stance. -->
-    <path class="figure" d="M-4.5 -31L-8 -14-11.5 -2.5-16.5 -1.5-16.5 1.2-6 1.2-2.6 -12 0 -22 2.6 -12 4.2 1.2 14.5 1.2 13.5 -1.2 8.8 -2.6 7.4 -14 6 -31Z" />
+    <!-- Legs and boots, each pivoting at the hip. -->
+    <g transform="translate(-2.5 0) rotate({legs.back} 0 -30)">
+        <path class="figure" d={LEG} />
+    </g>
+    <g transform="translate(2.5 0) rotate({legs.front} 0 -30)">
+        <path class="figure" d={LEG} />
+    </g>
     <!-- Robe, split skirt flaring in the wind. -->
     <path class="figure" d="M-9 -55C-10 -48-9 -42-8 -36L-13 -19-4 -23 0 -29 5 -22 13 -18 8 -36C9 -42 10 -48 9 -55Q0 -59-9 -55Z" />
     <path class="blood" d="M-8.6 -38.5L8.6 -38.5 8.3 -34.6-8.3 -34.6Z" />
@@ -79,11 +107,14 @@
     <path class="fold" d="M-4 -50C-8 -44-12 -38-18 -30M0 -52C-4 -46-6 -40-6 -36M2 -32C3 -28 4 -25 6 -22M10 -50C12 -46 12 -42 11 -39" />
 
     <!-- Head under a wide bamboo hat (douli). -->
+    <g class="head" transform="rotate({look} 1 -58)">
     <circle class="figure" cx="1" cy="-61" r="4.3" />
     <path class="figure" d="M-22 -62.6Q-10 -66.6 1 -73.2Q12 -66.6 24 -61.8Q12 -63.6 1 -63.4Q-10 -63.8-22 -62.6Z" />
     <path class="figure" d="M-1.6 -72L1 -77.2 3.6 -72Z" />
     <path class="rim" d="M-20 -62.9Q-9 -64.2 1 -64.2Q12 -64 22 -62.2" />
     <path class="rim" d="M-12 -65.6Q-4 -69 1 -71.6" />
+    </g>
+</g>
 </g>
 
 <style>
@@ -94,6 +125,10 @@
 
     .figure {
         fill: var(--figure);
+    }
+
+    .head {
+        transition: transform 0.6s ease;
     }
 
     .shade {

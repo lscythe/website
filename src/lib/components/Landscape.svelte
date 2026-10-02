@@ -1,30 +1,173 @@
 <script lang="ts">
-    import { onMount } from "svelte";
+    import { onMount, untrack } from "svelte";
     import Wanderer from "./Wanderer.svelte";
+    import { paintVortex, randomSeed, SUN } from "$lib/ink/landscape";
+    import { paintSky, SKY_DEFS } from "$lib/ink/sky";
     import {
-        FIGURE_X,
-        paintBirds,
-        paintLandscape,
-        paintVortex,
-        randomSeed,
-        SCENE_H,
-        SCENE_W,
-    } from "$lib/ink/landscape";
+        groundAt,
+        nextLanding,
+        paintWorld,
+        PARALLAX,
+        restAhead,
+        TILE,
+        WORLD_DEFS,
+        WORLD_H,
+        type Pose,
+    } from "$lib/ink/world";
 
     let { seed: initialSeed }: { seed: number } = $props();
 
     // svelte-ignore state_referenced_locally
     let seed = $state(initialSeed);
     let painting = $state(false);
+    let sunk = $state(false);
 
-    const scene = $derived(paintLandscape(seed));
-    const birds = $derived(paintBirds(seed));
+    const world = $derived(paintWorld(seed));
+    const sky = $derived(paintSky(seed));
     const vortex = $derived(paintVortex(seed));
-    const viewBox = `0 0 ${SCENE_W} ${SCENE_H}`;
+
+    /** Where the wanderer stands on screen, in scene units (900 = hero height). */
+    const DEFAULT_FX = 300;
+    let fx = $state(DEFAULT_FX);
+    // svelte-ignore state_referenced_locally
+    let pos = $state(world.start - DEFAULT_FX);
+    // svelte-ignore state_referenced_locally
+    let figY = $state(groundAt(world.surfaces, world.start) ?? 640);
+    let pose = $state<Pose>("stand");
+    let step = $state(0);
+
+    let hero: HTMLElement;
+    let resetWalk = () => {};
+
+    // A new painting starts the walk over.
+    $effect(() => {
+        world;
+        untrack(() => resetWalk());
+    });
+
+    const mod = (x: number, m: number) => ((x % m) + m) % m;
+    // Strips hold two tiles; sliding by one tile loops back to the start.
+    // One scene unit in CSS px: the hero is 900 units tall (see --k in the styles).
+    const actorAt = (x: number, y: number) => `translate(calc(${(x - 110).toFixed(1)} * var(--k)), calc(${(y - 130).toFixed(1)} * var(--k)))`;
+    const slide = (factor: number) => `translateX(${(-mod(pos * factor, TILE) / (2 * TILE)) * 100}%)`;
 
     onMount(() => {
         const shared = Number(new URL(location.href).searchParams.get("seed"));
         if (shared > 0) seed = Math.floor(shared);
+
+        const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+        const measure = () => {
+            const box = hero.getBoundingClientRect();
+            const visible = box.width / (box.height / WORLD_H);
+            fx = Math.min(620, Math.max(110, visible * 0.34));
+            hero.style.setProperty("--sun-x", `${Math.max(200, visible * 0.64)}px`);
+        };
+
+        // The walk: a small state machine stepping along rock tops and bridges.
+        type Mode = "walk" | "wait" | "takeoff" | "jump" | "land";
+        let mode: Mode = "walk";
+        let timer = 0;
+        let cooldown = 0;
+        let jump = { from: 0, to: 0, y0: 0, y1: 0, dur: 1, t: 0 };
+        const SPEED = 52;
+        const POSE: Record<Mode, Pose> = { walk: "walk", wait: "wait", takeoff: "crouch", jump: "jump", land: "crouch" };
+
+        const reset = () => {
+            pos = world.start - fx;
+            figY = groundAt(world.surfaces, pos + fx) ?? figY;
+            mode = "walk";
+            cooldown = 0;
+        };
+        resetWalk = reset;
+
+        const tick = (dt: number) => {
+            const feet = pos + fx;
+            if (mode === "walk") {
+                pos += SPEED * dt;
+                step += (SPEED * dt) / 9;
+                cooldown -= SPEED * dt;
+                const ground = groundAt(world.surfaces, feet + 8);
+                if (ground === null) {
+                    // Edge of the rock: gather, then leap for the next one.
+                    const land = nextLanding(world.surfaces, feet);
+                    const dist = land - feet;
+                    jump = { from: pos, to: pos + dist, y0: figY, y1: groundAt(world.surfaces, land) ?? figY, dur: 0.55 + dist / 380, t: 0 };
+                    mode = "takeoff";
+                    timer = 0.14;
+                } else {
+                    figY += (ground - figY) * Math.min(1, dt * 14);
+                    if (cooldown <= 0 && restAhead(world.rests, feet, 4)) {
+                        mode = "wait";
+                        timer = 3 + Math.random() * 2.5;
+                        cooldown = 400;
+                    }
+                }
+            } else if (mode === "jump") {
+                jump.t = Math.min(1, jump.t + dt / jump.dur);
+                const u = jump.t;
+                pos = jump.from + (jump.to - jump.from) * u;
+                const arc = 36 + (jump.to - jump.from) * 0.22;
+                figY = jump.y0 + (jump.y1 - jump.y0) * u - arc * Math.sin(Math.PI * u);
+                if (u >= 1) {
+                    mode = "land";
+                    timer = 0.12;
+                }
+            } else {
+                timer -= dt;
+                if (timer <= 0) mode = mode === "takeoff" ? "jump" : "walk";
+            }
+            pose = POSE[mode];
+        };
+
+        measure();
+        reset();
+        const onResize = () => measure();
+        addEventListener("resize", onResize);
+
+        // The sun sets and the moon rises when the theme changes.
+        const onTheme = (e: Event) => {
+            const { phase } = (e as CustomEvent<{ phase: "set" | "rise" }>).detail;
+            sunk = phase === "set";
+        };
+        addEventListener("ink:theme", onTheme);
+
+        let raf = 0;
+        let last = 0;
+        let visible = true;
+        const frame = (t: number) => {
+            const dt = last ? Math.min(0.05, (t - last) / 1000) : 0;
+            last = t;
+            tick(dt);
+            raf = requestAnimationFrame(frame);
+        };
+        const run = () => {
+            if (calm || !visible || raf) return;
+            last = 0;
+            raf = requestAnimationFrame(frame);
+        };
+        const stop = () => {
+            cancelAnimationFrame(raf);
+            raf = 0;
+        };
+        const io = new IntersectionObserver(([entry]) => {
+            visible = entry.isIntersecting;
+            if (visible) run();
+            else stop();
+        });
+        io.observe(hero);
+
+        if (calm) {
+            pose = "stand";
+            hero.querySelectorAll("svg").forEach((svg) => svg.pauseAnimations?.());
+        }
+
+        return () => {
+            stop();
+            io.disconnect();
+            removeEventListener("resize", onResize);
+            removeEventListener("ink:theme", onTheme);
+        };
     });
 
     function reforge() {
@@ -40,18 +183,40 @@
     }
 </script>
 
-<section class="hero" aria-label="A generated ink landscape">
+<section class="hero ink-scene" bind:this={hero} aria-label="An ink landscape scrolling past a wandering cultivator">
+    <!-- Shared gradients and filters for every layer below. -->
+    <svg class="defs" aria-hidden="true">{@html WORLD_DEFS}{@html SKY_DEFS}</svg>
+
     <div class="layers" class:painting>
-        <svg class="vortex" {viewBox} preserveAspectRatio="xMidYMax slice" aria-hidden="true">
-            <g>{@html vortex}</g>
+        <svg class="sky" viewBox="0 0 3200 {WORLD_H}" preserveAspectRatio="xMinYMax slice" aria-hidden="true">
+            <g class="celestial">
+                <g class="vortex night-only"><g transform="translate({-SUN.x} {-SUN.y})">{@html vortex}</g></g>
+                <g class="disc" class:sunk>
+                    <g class="day-only">{@html sky.sun}</g>
+                    <g class="night-only">{@html sky.moon}</g>
+                </g>
+                <g class="clouds">{@html sky.clouds}</g>
+                <g class="day-only">{@html sky.cranes}</g>
+                <g class="night-only">{@html sky.bats}</g>
+            </g>
         </svg>
-        <svg class="ink-scene" {viewBox} preserveAspectRatio="xMidYMax slice" aria-hidden="true">
-            {@html scene.svg}
+
+        {#each [["far", world.far], ["mid", world.mid], ["near", world.near]] as [depth, art] (depth)}
+            <div class="strip {depth}" style:transform={slide(PARALLAX[depth as keyof typeof PARALLAX])}>
+                <svg viewBox="0 0 {2 * TILE} {WORLD_H}" aria-hidden="true">
+                    <defs><g id="tile-{depth}">{@html art}</g></defs>
+                    <use href="#tile-{depth}" x={-TILE} />
+                    <use href="#tile-{depth}" />
+                    <use href="#tile-{depth}" x={TILE} />
+                </svg>
+            </div>
+        {/each}
+
+        <!-- A small box that rides on a transform: walking never repaints the scene. -->
+        <svg class="actor" viewBox="-110 -130 180 140" style:transform={actorAt(fx, figY)} aria-hidden="true">
+            <Wanderer x={0} y={0} {pose} {step} />
         </svg>
-        <svg class="life" {viewBox} preserveAspectRatio="xMidYMax slice" aria-hidden="true">
-            <g class="birds">{@html birds}</g>
-            <Wanderer x={FIGURE_X} y={scene.footY} />
-        </svg>
+
         <div class="mist" aria-hidden="true">
             <span></span><span></span><span></span>
         </div>
@@ -78,6 +243,9 @@
 
 <style>
     .hero {
+        --sun-x: 860px;
+        /* Size of one scene unit: the scene is 900 units tall. */
+        --k: calc(max(100svh, 560px) / 900);
         position: relative;
         height: 100svh;
         min-height: 560px;
@@ -95,12 +263,33 @@
         pointer-events: none;
     }
 
+    .defs {
+        position: absolute;
+        width: 0;
+        height: 0;
+    }
+
     .layers,
-    .layers svg {
+    .sky {
         position: absolute;
         inset: 0;
         width: 100%;
         height: 100%;
+    }
+
+    /* The sky animates on its own layer so it never repaints the page. */
+    .sky {
+        will-change: transform;
+    }
+
+    .actor {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: calc(180 * var(--k));
+        height: calc(140 * var(--k));
+        overflow: visible;
+        will-change: transform;
     }
 
     .layers {
@@ -114,28 +303,119 @@
         }
     }
 
+    /* Each depth is a wide strip moved only by transform, so the browser
+       slides an already-painted layer instead of redrawing ink every frame. */
+    .strip {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100%;
+        aspect-ratio: 4800 / 900;
+        will-change: transform;
+
+        svg {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+    }
+
+    .celestial {
+        transform: translate(var(--sun-x), 250px);
+    }
+
+    .disc {
+        transition: transform 0.75s cubic-bezier(0.55, 0, 0.9, 0.4);
+
+        &.sunk {
+            transform: translateY(620px);
+        }
+
+        &:not(.sunk) {
+            transition: transform 1.3s cubic-bezier(0.15, 0.6, 0.3, 1);
+        }
+    }
+
     .vortex {
         :global(path) {
             fill: var(--vortex);
         }
 
-        g {
-            transform-box: view-box;
-            transform-origin: 905px 285px;
+        > g {
+            transform-box: fill-box;
+            transform-origin: center;
             animation: spin 240s linear infinite;
         }
     }
 
-    .life {
-        :global(.birds path) {
+    .sky {
+        :global(.sun) {
+            fill: var(--blood);
+        }
+
+        :global(.moon) {
+            fill: var(--blood);
+        }
+
+        :global(.maria) {
+            fill: #000;
+            opacity: 0.3;
+        }
+
+        :global(.halo path) {
+            fill: var(--blood);
+            opacity: 0.35;
+        }
+
+        :global(.cloud path) {
+            fill: var(--ink);
+            opacity: 0.16;
+        }
+
+        :global(.bird path) {
             fill: none;
             stroke: var(--ink);
             stroke-width: 1.3;
             stroke-linecap: round;
         }
 
-        .birds {
-            animation: drift 40s ease-in-out infinite alternate;
+        :global(.crane-body) {
+            fill: var(--paper);
+            stroke: var(--ink);
+            stroke-width: 1.2;
+        }
+
+        :global(.crane-wing) {
+            fill: var(--paper);
+            stroke: var(--ink);
+            stroke-width: 1.2;
+        }
+
+        :global(.crane-wing.far) {
+            fill: var(--ink);
+            opacity: 0.55;
+        }
+
+        :global(.crane-neck),
+        :global(.crane-legs) {
+            fill: none;
+            stroke: var(--ink);
+            stroke-width: 2;
+            stroke-linecap: round;
+        }
+
+        :global(.crane-legs) {
+            stroke-width: 1.1;
+        }
+
+        :global(.crane-crown) {
+            fill: var(--blood);
+        }
+
+        :global(.bat) {
+            fill: var(--figure);
+            stroke: var(--ink-soft);
+            stroke-width: 0.5;
         }
     }
 
@@ -276,6 +556,10 @@
 
     /* On tall screens the sun sits right of centre, so the title moves left. */
     @media (aspect-ratio < 1) {
+        .hero {
+            --sun-x: 280px;
+        }
+
         .title {
             right: auto;
             left: clamp(1rem, 6vw, 3rem);
@@ -321,11 +605,14 @@
     }
 
     @media (prefers-reduced-motion: reduce) {
-        .vortex g,
-        .birds,
+        .vortex > g,
         .mist span,
         .descend {
             animation: none;
+        }
+
+        .disc {
+            transition: none;
         }
     }
 </style>

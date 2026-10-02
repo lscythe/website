@@ -10,6 +10,14 @@
 
 <Seo title={data.meta.title} description={data.meta.description} image={data.meta.heroImage} />
 
+<!-- Shared by every diagram on the page: gives drawn lines a wavering brush edge. -->
+<svg class="filters" aria-hidden="true">
+    <filter id="diagram-ink" x="-5%" y="-5%" width="110%" height="110%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.06" numOctaves="2" seed="4" result="n" />
+        <feDisplacementMap in="SourceGraphic" in2="n" scale="2.6" />
+    </filter>
+</svg>
+
 <article class="container">
     <header>
         <a class="back" href="/blog">← Writings</a>
@@ -51,6 +59,12 @@
 <style>
     article {
         max-width: 860px;
+    }
+
+    .filters {
+        position: absolute;
+        width: 0;
+        height: 0;
     }
 
     header {
