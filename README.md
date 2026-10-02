@@ -19,8 +19,31 @@ scattered on top. Colours come from CSS, so the same painting works on paper (li
   the sky (`sky.ts`) has cranes by day and bats by night
 - the theme toggle sets the sun and raises the moon (`src/lib/theme.svelte.ts`)
 
-The splash and brush-stroke shapes used around the site are CSS masks in `static/ink/`,
-regenerated with `bun scripts/ink-assets.ts`.
+## weather
+
+The painting follows Jakarta's current weather. `worker/index.ts` (the Cloudflare Worker that
+serves the site) answers `/api/weather` from [Open-Meteo](https://open-meteo.com/), cached for ten
+minutes, so visitors' browsers never call a third party. Clear skies change nothing; cloudy and
+fog bring drifting ink clouds and haze; rain brings ink rain, the wanderer's red umbrella and drops
+splashing between pages; a storm adds lightning. Add `?weather=clear|cloudy|fog|rain|storm` to any
+URL to preview a mood. Under `bun run dev` there is no Worker, so the sky stays clear.
+
+### performance
+
+The painting is generated as SVG but never animated as SVG. In the browser each depth is painted
+once per theme into a bitmap (`src/lib/ink/raster.ts`) and the hero redraws those bitmaps into one
+canvas each frame. The sun, moon and clouds are pictures that only move. The other theme is
+painted ahead of time when the page is idle, so switching swaps bitmaps under the ink wash.
+Before script runs, and without it, `/scene/*.svg` (baked at build time, `src/lib/ink/stills.ts`)
+show the same painting as plain images.
+
+The brush font (Ma Shan Zheng, OFL) is cut to the characters the site actually uses:
+`static/fonts/ma-shan-zheng-subset.woff2`, about 24 KB. After writing new hanzi anywhere in `src/`,
+regenerate it with `python3 scripts/subset-brush-font.py MaShanZheng-Regular.ttf` (the full TTF is
+on Google Fonts; needs fonttools and brotli).
+
+The ink blots (`static/ink/blot-*.webp`) come from `python3 scripts/ink-blots.py` (needs numpy
+and Pillow); the brush strokes (`static/ink/stroke-*.svg`) from `bun scripts/ink-assets.ts`.
 
 ## develop
 
@@ -43,4 +66,4 @@ show up on `/blog`, in `/rss.xml` and in `/sitemap.xml`.
 ## deploy
 
 `bun run build` writes static files to `dist`, which `wrangler deploy` serves on Cloudflare
-Workers (the GitHub Action does this on push to `main`).
+Workers together with the weather Worker (`bun run pre-deploy` runs both locally) (the GitHub Action does this on push to `main`).

@@ -7,7 +7,6 @@
       "devDependencies": {
         "@fontsource/cormorant-garamond": "^5.3.0",
         "@fontsource/eb-garamond": "^5.3.0",
-        "@fontsource/ma-shan-zheng": "^5.3.1",
         "@sveltejs/adapter-static": "^3.0.10",
         "@sveltejs/kit": "^2.70.3",
         "@sveltejs/vite-plugin-svelte": "^6.2.0",
@@ -94,8 +93,6 @@
     "@fontsource/cormorant-garamond": ["@fontsource/cormorant-garamond@5.3.0", "", {}, "sha512-weuGsCirGVWBWqpt6YUp0yLThTe4G8YO45noq8wxeJCRvEpq5lFrxNMFSTxcyOyV5k5otzJ8guDzYegdYlcLMQ=="],
 
     "@fontsource/eb-garamond": ["@fontsource/eb-garamond@5.3.0", "", {}, "sha512-VplwHpB8FLuzl+4G5LDci1b3Z4SghiuXH8XEgaxjnOb5aue5mEt1njmDKeO6iyLeGa73LffU7PC7hzncLRx0ZA=="],
-
-    "@fontsource/ma-shan-zheng": ["@fontsource/ma-shan-zheng@5.3.1", "", {}, "sha512-cGGn7Yje2RSduXVxEk+rCfNZyD/T/7FMGj03LNPiK8TRL9Sing0tq1zJF3n+W29szPqgb2RNs5oIvmm+ikeI+Q=="],
 
     "@img/colour": ["@img/colour@1.1.0", "", {}, "sha512-Td76q7j57o/tLVdgS746cYARfSyxk8iEfRxewL9h4OMzYhbW4TAcppl0mT4eyqXddh6L/jwoM75mo7ixa/pCeQ=="],
 

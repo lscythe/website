@@ -1,20 +1,23 @@
 <script lang="ts">
-    import { FIGURE_X, paintLandscape } from "$lib/ink/landscape";
+    import { FIGURE_X } from "$lib/ink/landscape";
     import Wanderer from "./Wanderer.svelte";
 
-    let { seed, caption }: { seed: number; caption: string } = $props();
-
-    const scene = $derived(paintLandscape(seed));
+    // The landscape is a build-time picture (see $lib/ink/stills); only the
+    // wanderer is live SVG on top of it.
+    let { footY, caption }: { footY: number; caption: string } = $props();
 </script>
 
-<!-- A vertical crop of the hero landscape, mounted like a hanging scroll. -->
+<!-- A vertical crop of a landscape, mounted like a hanging scroll. -->
 <figure class="scroll">
     <span class="rod" aria-hidden="true"></span>
     <div class="silk">
-        <svg class="ink-scene" viewBox="560 220 420 640" role="img" aria-label={caption}>
-            {@html scene.svg}
-            <Wanderer x={FIGURE_X} y={scene.footY} scale={1.5} />
-        </svg>
+        <div class="art" role="img" aria-label={caption}>
+            <img class="day-only" src="/scene/scroll-light.svg" alt="" width="420" height="640" loading="lazy" />
+            <img class="night-only" src="/scene/scroll-dark.svg" alt="" width="420" height="640" loading="lazy" />
+            <svg viewBox="560 220 420 640" aria-hidden="true">
+                <Wanderer x={FIGURE_X} y={footY} scale={1.5} />
+            </svg>
+        </div>
         <span class="seal" aria-hidden="true">镰</span>
     </div>
     <span class="rod" aria-hidden="true"></span>
@@ -40,15 +43,21 @@
         padding: 18px 16px 40px;
         background: var(--paper-raised);
         box-shadow:
-            inset 0 0 0 1px color-mix(in srgb, var(--ink) 12%, transparent),
-            0 24px 40px -24px rgb(0 0 0 / 0.5);
+            inset 0 0 0 1px color-mix(in srgb, var(--ink) 12%, transparent);
     }
 
-    svg {
-        display: block;
-        width: 100%;
-        height: auto;
+    .art {
+        position: relative;
+        aspect-ratio: 420 / 640;
         background: var(--paper);
+
+        img,
+        svg {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+        }
     }
 
     .seal {

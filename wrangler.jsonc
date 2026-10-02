@@ -2,8 +2,12 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "lscythe-website",
   "compatibility_date": "2025-10-11",
+  // Serves the static site; the Worker only handles /api/* (Jakarta weather).
+  "main": "./worker/index.ts",
   "assets": {
+    "binding": "ASSETS",
     "not_found_handling": "404-page",
     "directory": "./dist",
+    "run_worker_first": ["/api/*"],
   },
 }

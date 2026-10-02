@@ -11,23 +11,28 @@
         scale = 1.25,
         pose = "stand",
         step = 0,
-    }: { x: number; y: number; scale?: number; pose?: Pose; step?: number } = $props();
+        umbrella = false,
+    }: { x: number; y: number; scale?: number; pose?: Pose; step?: number; umbrella?: boolean } = $props();
+
+    // A red oil-paper umbrella: scalloped canopy, bamboo ribs, crooked handle.
+    const ribs = [-24, -12, 0, 12, 24, 36].map((x) => `M6 -100L${x} -78`).join("");
 
     // Legs swing from the hip; the body bobs with each stride.
     const legs = $derived.by(() => {
         if (pose === "walk") {
             const a = Math.sin(step) * 26;
-            return { back: -a, front: a, lift: -Math.abs(Math.cos(step)) * 1.6 };
+            return { back: a, front: -a, lift: -Math.abs(Math.cos(step)) * 1.6 };
         }
-        if (pose === "jump") return { back: -34, front: 40, lift: -2 };
-        if (pose === "crouch") return { back: -20, front: 24, lift: 4 };
-        return { back: -11, front: 13, lift: 0 };
+        if (pose === "jump") return { back: 34, front: -40, lift: -2 };
+        if (pose === "crouch") return { back: 20, front: -24, lift: 4 };
+        return { back: 11, front: -13, lift: 0 };
     });
     // While waiting the wanderer lifts their head toward the sky.
     const look = $derived(pose === "wait" ? -9 : 0);
 
     const wind = (a: string, b: string) => `${a};${b};${a}`;
-    const LEG = "M-2.8 -31L-3.4 -14-4 -1.2-9.6 -0.6-9.6 1.4 3.4 1.4 3.2 -1 1.8 -1.8 2 -14 3.2 -31Z";
+    // Toes point forward (right), the way the wanderer faces and walks.
+    const LEG = "M2.8 -31L3.4 -14 4 -1.2 9.6 -0.6 9.6 1.4-3.4 1.4-3.2 -1-1.8 -1.8-2 -14-3.2 -31Z";
 
     const ribbonA = [
         "M-13 -64C-24 -71-35 -57-52 -66-60 -70-66 -64-74 -67-64 -61-55 -63-46 -60-31 -56-23 -64-13 -62Z",
@@ -114,17 +119,27 @@
     <path class="rim" d="M-20 -62.9Q-9 -64.2 1 -64.2Q12 -64 22 -62.2" />
     <path class="rim" d="M-12 -65.6Q-4 -69 1 -71.6" />
     </g>
+    {#if umbrella}
+        <g class="umbrella" transform="rotate(10 12 -38)">
+            <path class="shaft" d="M12 -38L6 -100M12 -38Q13 -33 9.5 -33" />
+            <path class="canopy" d="M-29 -78Q6 -116 41 -78Q36 -82 30 -77Q24 -82 18 -77Q12 -82 6 -77Q0 -82-6 -77Q-12 -82-18 -77Q-24 -82-29 -78Z" />
+            <path class="ribs" d={ribs} />
+            <circle class="figure" cx="6" cy="-101" r="1.6" />
+        </g>
+    {/if}
 </g>
 </g>
 
 <style>
-    /* One rim light around the whole silhouette, so overlapping parts stay merged. */
-    .wanderer {
-        filter: drop-shadow(0 0 0.6px var(--figure-edge)) drop-shadow(0 0 0.6px var(--figure-edge));
-    }
-
+    /* A thin rim light so the figure reads at night. Drawn as a stroke under
+       each shape (paint-order) rather than a drop-shadow filter, which would
+       re-run on every frame of the walk. */
     .figure {
         fill: var(--figure);
+        stroke: var(--figure-edge);
+        stroke-width: 0.9;
+        paint-order: stroke;
+        stroke-linejoin: round;
     }
 
     .head {
@@ -155,6 +170,26 @@
         fill: none;
         stroke: var(--figure);
         stroke-width: 1.3;
+    }
+
+    .canopy {
+        fill: var(--blood);
+        stroke: var(--figure);
+        stroke-width: 0.8;
+        stroke-linejoin: round;
+    }
+
+    .ribs {
+        fill: none;
+        stroke: var(--blood-deep);
+        stroke-width: 0.7;
+    }
+
+    .shaft {
+        fill: none;
+        stroke: var(--figure);
+        stroke-width: 1.3;
+        stroke-linecap: round;
     }
 
     .fold,

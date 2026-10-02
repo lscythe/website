@@ -42,32 +42,6 @@ export function moon(rand: Rand): string {
   <g clip-path="url(#moon-clip)">${maria.join("")}</g>`;
 }
 
-/** Wisps of cloud, written as long curling strokes, drifting past the disc. */
-export function clouds(rand: Rand): string {
-  const noise = createNoise(rand);
-  const out: string[] = [];
-  for (let c = 0; c < 3; c++) {
-    const y = between(rand, -40, 70);
-    const len = between(rand, 220, 380);
-    const line: Pt[] = [];
-    for (let i = 0; i <= 30; i++) {
-      const t = i / 30;
-      line.push([-len / 2 + t * len, y + Math.sin(t * Math.PI * 2 + c) * 8 + (noise(t * 3, c) - 0.5) * 10]);
-    }
-    // A curl at the head of the wisp, like an auspicious cloud.
-    const [hx, hy] = line[line.length - 1];
-    for (let i = 0; i <= 14; i++) {
-      const a = (i / 14) * Math.PI * 1.6;
-      line.push([hx + Math.sin(a) * 14, hy - 14 + Math.cos(a) * 14]);
-    }
-    const dur = between(rand, 70, 110);
-    const from = between(rand, -420, -260);
-    out.push(`<g class="cloud"><path d="${brush(line, noise, { width: between(rand, 5, 9), wobble: 1, offset: c * 5 })}"/>
-      <animateTransform attributeName="transform" type="translate" dur="${r(dur)}s" begin="-${r(rand() * dur)}s" repeatCount="indefinite" values="${r(from)} 0;${r(-from)} 0"/></g>`);
-  }
-  return out.join("");
-}
-
 /* ------------------------------------------------------------------ */
 /* Creatures                                                           */
 /* ------------------------------------------------------------------ */
@@ -139,9 +113,23 @@ export function bats(rand: Rand): string {
   return out.join("");
 }
 
+/**
+ * The sun and the moon as standalone pictures (with their own glow, bleed
+ * and halo), centred in a 400 x 400 box. Each is drawn once by the browser
+ * and then only moved, which keeps the sunset cheap.
+ */
+function disc(body: string, key: string) {
+  // Ids are made unique per picture: the sun is hidden at night, and a
+  // gradient inside a hidden element would not paint for the moon.
+  const ids = ["sky-glow", "sky-bleed", "moon-clip", "pomo-soft"];
+  let out = SKY_DEFS + body;
+  for (const id of ids) out = out.replaceAll(`"${id}"`, `"${id}-${key}"`).replaceAll(`#${id})`, `#${id}-${key})`);
+  return `<svg viewBox="-200 -200 400 400" aria-hidden="true">${out}</svg>`;
+}
+
 export function paintSky(seedInput: number) {
   const rand = createRand(seedInput ^ 0x2545f491);
-  return { sun: sun(), moon: moon(rand), clouds: clouds(rand), cranes: cranes(rand), bats: bats(rand) };
+  return { sun: disc(sun(), "sun"), moon: disc(moon(rand), "moon"), cranes: cranes(rand), bats: bats(rand) };
 }
 
 export const SKY_DEFS = `
@@ -160,3 +148,136 @@ export const SKY_DEFS = `
     <feGaussianBlur in="d" stdDeviation="2.5"/>
   </filter>
 </defs>`;
+
+/* ------------------------------------------------------------------ */
+/* Weather                                                             */
+/* ------------------------------------------------------------------ */
+
+/**
+ * 祥云-style cloud bank, after ink-painting cloud patterns: a scalloped top
+ * edge, echoed by parallel contour lines that run shorter and flatter as they
+ * go down and finish in a curl, over a soft grey wash. No filters, so it costs
+ * little to draw and nothing to move.
+ */
+interface BankSpec {
+  x: number;
+  y: number;
+  w: number;
+  lines: number;
+  gap: number;
+  rise: number;
+}
+
+function bank(rand: Rand, noise: ReturnType<typeof createNoise>, b: BankSpec, gradient: string, out: string[]) {
+  // Scallops across the top, tallest towards the middle of the bank.
+  const humps: { a: number; z: number; h: number }[] = [];
+  let x = b.x;
+  while (x < b.x + b.w - 20) {
+    const span = between(rand, 70, 150);
+    const mid = (x + span / 2 - b.x) / b.w;
+    humps.push({ a: x, z: Math.min(x + span, b.x + b.w), h: b.rise * between(rand, 0.45, 1) * (0.55 + 0.45 * Math.sin(Math.PI * mid)) });
+    x += span * between(rand, 0.72, 0.92);
+  }
+  const top = (px: number) => {
+    let lift = 0;
+    for (const h of humps) {
+      if (px < h.a || px > h.z) continue;
+      lift = Math.max(lift, h.h * Math.pow(Math.sin((Math.PI * (px - h.a)) / (h.z - h.a)), 0.65));
+    }
+    return b.y - lift;
+  };
+  const xs: number[] = [];
+  for (let px = b.x; px <= b.x + b.w; px += 4) xs.push(px);
+  const depthPx = b.lines * b.gap + 6;
+  // The body thins to rounded ends, so no bank stops in a hard edge.
+  const under = (px: number) => {
+    const t = Math.min(1, Math.max(0, (px - b.x) / b.w));
+    return top(px) + depthPx * Math.pow(Math.sin(Math.PI * t), 0.35);
+  };
+
+  // Body: paper underneath (it hides what's behind), a grey wash over it.
+  const outline = xs.map((px) => `${r(px)} ${r(top(px))}`).join("L");
+  const belly = [...xs].reverse().map((px) => `${r(px)} ${r(under(px))}`).join("L");
+  const body = `M${outline}L${belly}Z`;
+  out.push(`<path d="${body}" fill="url(#${gradient}-paper)"/><path d="${body}" fill="url(#${gradient})"/>`);
+
+  // Contour lines, each one shorter and flatter, ending in a curl.
+  for (let k = 0; k < b.lines; k++) {
+    const inL = k * between(rand, 4, 18);
+    const inR = k * between(rand, 8, 26);
+    const flat = Math.pow(0.7, k);
+    const line: Pt[] = [];
+    for (const px of xs) {
+      if (px < b.x + inL || px > b.x + b.w - inR) continue;
+      const y = b.y + k * b.gap - (b.y - top(px)) * flat + (noise(px * 0.02, k) - 0.5) * 1.5;
+      if (k > 0 && y > under(px) - 2) {
+        if (line.length) break;
+        continue;
+      }
+      line.push([px, y]);
+    }
+    // Skip stubs: a line cut short by the body's taper would dangle.
+    if (line.length < 4 || line[line.length - 1][0] - line[0][0] < b.w * 0.3) continue;
+    const [hx, hy] = line[line.length - 1];
+    const curl = b.gap * between(rand, 0.55, 0.85);
+    for (let i = 1; i <= 14; i++) {
+      const a = (i / 14) * Math.PI * 1.5;
+      line.push([hx + Math.sin(a) * curl, hy + curl - Math.cos(a) * curl]);
+    }
+    out.push(`<path class="cloud-line" d="${brush(line, noise, { width: k === 0 ? 3.2 : between(rand, 1.4, 2.4), taper: "both", wobble: 0.5, offset: k * 7 + b.x })}"/>`);
+  }
+}
+
+/** A cloud of two or three banks; returns a self-contained <svg>. */
+export function xiangyun(seed: number, opts: { width?: number; banks?: number; heavy?: boolean } = {}): string {
+  const rand = createRand(seed);
+  const noise = createNoise(rand);
+  const width = opts.width ?? 520;
+  const banks = opts.banks ?? 2 + Math.floor(rand() * 2);
+  const gradient = `cloud-shade-${seed}`;
+  const out: string[] = [];
+  // Back banks first: smaller and higher, offset sideways.
+  for (let i = 0; i < banks; i++) {
+    const depth = banks - 1 - i;
+    const w = width * (1 - depth * 0.22) * between(rand, 0.85, 1);
+    bank(
+      rand,
+      noise,
+      {
+        x: 20 + between(rand, 0, width - w),
+        y: 70 + i * between(rand, 30, 44),
+        w,
+        lines: opts.heavy ? 7 : 4 + Math.floor(rand() * 3),
+        gap: between(rand, 6.5, 9),
+        rise: between(rand, 22, 36) * (opts.heavy ? 1.3 : 1),
+      },
+      gradient,
+      out,
+    );
+  }
+  const h = 70 + banks * 44 + 80;
+  const shade = opts.heavy ? [0.55, 0] : [0.3, 0];
+  return `<svg viewBox="0 0 ${width + 60} ${h}" aria-hidden="true"><defs><linearGradient id="${gradient}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="cloud-tone" stop-opacity="${shade[0]}"/><stop offset="1" class="cloud-tone" stop-opacity="${shade[1]}"/></linearGradient><linearGradient id="${gradient}-paper" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="cloud-paper" stop-opacity="0.95"/><stop offset="0.55" class="cloud-paper" stop-opacity="0.85"/><stop offset="1" class="cloud-paper" stop-opacity="0"/></linearGradient></defs>${out.join("")}</svg>`;
+}
+
+/** A forked bolt of lightning, written as one jagged brush stroke. */
+export function lightning(seed: number): string {
+  const rand = createRand(seed);
+  const noise = createNoise(rand);
+  const main: Pt[] = [];
+  let x = 100;
+  let y = 0;
+  while (y < 420) {
+    main.push([x, y]);
+    x += between(rand, -26, 26);
+    y += between(rand, 22, 44);
+  }
+  const fork: Pt[] = [main[Math.floor(main.length * 0.45)]];
+  let [fx, fy] = fork[0];
+  for (let i = 0; i < 5; i++) {
+    fx += between(rand, 8, 30);
+    fy += between(rand, 18, 34);
+    fork.push([fx, fy]);
+  }
+  return `<svg viewBox="0 0 200 440" aria-hidden="true"><path d="${brush(main, noise, { width: 7, taper: "end", wobble: 0.6, offset: seed })}"/><path d="${brush(fork, noise, { width: 4, taper: "end", wobble: 0.6, offset: seed + 1 })}"/></svg>`;
+}

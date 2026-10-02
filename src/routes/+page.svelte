@@ -9,7 +9,7 @@
 
 <Seo />
 
-<Landscape seed={data.seed} />
+<Landscape seed={data.seed} start={data.start} startY={data.startY} />
 
 <div class="container chapters">
     <section id="prelude" class="chapter">

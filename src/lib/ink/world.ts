@@ -1,5 +1,5 @@
 import type { Pt } from "./brush";
-import { DEFS, mist, mountain, paintRock, pine, ridgeOf, type Painter } from "./landscape";
+import { DEFS, mist, mountain, paintRock, pine, ridgeOf, type Painter, type Splash } from "./landscape";
 import { between, createNoise, createRand } from "./random";
 import { bamboo, bridge, hut, pagoda, pavilion, plum, splash, splatter } from "./structures";
 
@@ -23,10 +23,17 @@ export interface Surface {
   kind: "rock" | "bridge";
 }
 
+/**
+ * The rows of each tile that hold any ink. The renderer rasterises only this
+ * band, so bitmaps carry no empty sky.
+ */
+export const BANDS = { far: [300, 700], mid: [190, 830], near: [440, 920] } as const;
+
 export interface World {
   far: string;
   mid: string;
   near: string;
+  splashes: { far: Splash[]; mid: Splash[]; near: Splash[] };
   surfaces: Surface[];
   /** Places worth stopping at (pavilions, huts), as tile x positions. */
   rests: number[];
@@ -49,15 +56,12 @@ function paintFar(p: Painter) {
     mountain(p, { x: x + w / 2, base: 600, w, h: between(rand, 100, 230), depth: "far", crag: between(rand, 0.1, 0.5) }, "far");
     x += w * between(rand, 0.5, 0.75);
   }
-  // A distant pagoda, barely more than a smudge.
-  pagoda(p, between(rand, 400, 2000), 520, 0.55, 4);
   out.push(`</g>`);
   out.push(mist("fog", 470, 180));
 }
 
 function paintMid(p: Painter) {
   const { rand, out } = p;
-  const peaks: { x: number; top: Pt }[] = [];
   out.push(`<g filter="url(#bleed)">`);
   let x = 120;
   while (x < TILE) {
@@ -68,14 +72,10 @@ function paintMid(p: Painter) {
     // Splashed ink pooling in the upper body of the peak, before the linework.
     const top = ridge.reduce((a, b) => (b[1] < a[1] ? b : a));
     paintRock(p, ridge, spec.base, "mid", seed, "mid");
-    splash(p, top[0] + between(rand, -30, 30), top[1] + spec.h * 0.28, w * 0.2, spec.h * 0.16);
-    peaks.push({ x, top });
+    splash(p, top[0] + between(rand, -30, 30), top[1] + spec.h * 0.3, w * 0.26, spec.h * 0.2, 0.26);
     x += w * between(rand, 0.75, 1.05) + between(rand, 40, 160);
   }
   out.push(`</g>`);
-  // A pagoda keeps watch from one of the summits.
-  const withPagoda = peaks[Math.floor(rand() * peaks.length)];
-  pagoda(p, withPagoda.top[0], withPagoda.top[1] + 8, 1.1);
   out.push(mist("fog", 610, 190));
 }
 
@@ -133,7 +133,7 @@ function paintNear(p: Painter): { surfaces: Surface[]; rests: number[] } {
     surfaces.push({ pts: crown.map(([cx, cy]) => [cx, cy - 1] as Pt), kind: "rock" });
 
     // Ink splashed down the cliff faces and flicked across the stone.
-    splash(p, rock.x0 + (rock.x1 - rock.x0) * between(rand, 0.3, 0.7), rock.top + 70, (rock.x1 - rock.x0) * 0.26, 46, "pomo pomo-near");
+    splash(p, rock.x0 + (rock.x1 - rock.x0) * between(rand, 0.3, 0.7), rock.top + 90, (rock.x1 - rock.x0) * 0.32, 70, 0.2);
     splatter(p, rock.x1 - 30, rock.top + 60, 70, 26);
 
     // Dress each rock differently.
@@ -155,7 +155,9 @@ function paintNear(p: Painter): { surfaces: Surface[]; rests: number[] } {
       plum(p, mid - 40, groundAt(mid - 40) + 2, 1.2);
       pine(p, rock.x1 - 50, groundAt(rock.x1 - 50) + 2, 56);
     } else {
-      pine(p, mid, groundAt(mid) + 2, 40);
+      // A pagoda stands on solid, level rock, never on a peak.
+      pagoda(p, mid, groundAt(mid) + 2, 1.15);
+      pine(p, mid - 90, groundAt(mid - 90) + 2, 40);
       bamboo(p, rock.x1 - 60, groundAt(rock.x1 - 60) + 2, 0.8);
     }
   });
@@ -189,7 +191,7 @@ const EXTRA_DEFS = `
 
 export function paintWorld(seedInput: number): World {
   const rand = createRand(seedInput);
-  const make = (): Painter => ({ rand, noise: createNoise(rand), out: [] });
+  const make = (): Painter => ({ rand, noise: createNoise(rand), out: [], splashes: [] });
 
   const far = make();
   paintFar(far);
@@ -203,6 +205,7 @@ export function paintWorld(seedInput: number): World {
     far: far.out.join(""),
     mid: mid.out.join(""),
     near: near.out.join(""),
+    splashes: { far: far.splashes!, mid: mid.splashes!, near: near.splashes! },
     surfaces,
     rests,
     start: first[Math.floor(first.length * 0.35)][0],

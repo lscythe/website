@@ -25,3 +25,6 @@ pnpm-debug.log*
 
 # sveltekit
 .svelte-kit/
+
+# wrangler local state
+.wrangler/

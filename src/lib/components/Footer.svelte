@@ -1,6 +1,7 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import { setTheme, theme } from "$lib/theme.svelte";
+    import { weather } from "$lib/weather.svelte";
 
     const inceptionYear = 2025;
 
@@ -28,6 +29,12 @@
                 <button type="button" class="follow" onclick={() => setTheme("system")}>
                     <span class="glyph" aria-hidden="true">自</span> Follow my device's light
                 </button>
+            {/if}
+            {#if weather.now}
+                <span class="weather">
+                    Jakarta now · <span class="glyph" aria-hidden="true">{weather.now.glyph}</span>
+                    {weather.now.label}{weather.now.temp !== null ? ` · ${weather.now.temp}°C` : ""}
+                </span>
             {/if}
             <span class="credit">
                 Mountains grown after <a href="https://github.com/LingDong-/shan-shui-inf">shan-shui-inf</a>
@@ -131,6 +138,19 @@
         color: var(--blood);
         border-radius: 2px;
         transition: background 0.2s, color 0.2s;
+    }
+
+    .weather {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35em;
+        font-style: italic;
+
+        .glyph {
+            font-family: var(--font-brush);
+            font-style: normal;
+            color: var(--blood);
+        }
     }
 
     .credit {
