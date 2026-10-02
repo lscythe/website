@@ -2,7 +2,9 @@
     import { onMount, untrack } from "svelte";
     import Wanderer from "./Wanderer.svelte";
     import { paintVortex, randomSeed, SUN } from "$lib/ink/landscape";
-    import { paintSky, SKY_DEFS } from "$lib/ink/sky";
+    import { inkCloud, lightning, paintSky, SKY_DEFS } from "$lib/ink/sky";
+    import { weather } from "$lib/weather.svelte";
+    import Rain from "./Rain.svelte";
     import {
         groundAt,
         nextLanding,
@@ -25,6 +27,30 @@
     const world = $derived(paintWorld(seed));
     const sky = $derived(paintSky(seed));
     const vortex = $derived(paintVortex(seed));
+
+    // Jakarta's weather decides the mood: clear skies leave the painting alone.
+    const mood = $derived(weather.now?.condition ?? "clear");
+    const wet = $derived(mood === "rain" || mood === "storm");
+    const clouds = $derived([1, 2, 3, 4].map((n) => inkCloud(seed * 7 + n)));
+    const bolt = $derived(lightning(seed));
+    let strike = $state(false);
+    let boltX = $state(30);
+
+    // Thunder: every so often a bolt forks down and the page flashes.
+    $effect(() => {
+        if (mood !== "storm" || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+        let timer = 0;
+        const next = () => {
+            timer = window.setTimeout(() => {
+                boltX = 10 + Math.random() * 75;
+                strike = true;
+                window.setTimeout(() => (strike = false), 700);
+                next();
+            }, 5000 + Math.random() * 9000);
+        };
+        next();
+        return () => clearTimeout(timer);
+    });
 
     /** Where the wanderer stands on screen, in scene units (900 = hero height). */
     const DEFAULT_FX = 300;
@@ -183,7 +209,7 @@
     }
 </script>
 
-<section class="hero ink-scene" bind:this={hero} aria-label="An ink landscape scrolling past a wandering cultivator">
+<section class="hero ink-scene weather-{mood}" bind:this={hero} aria-label="An ink landscape scrolling past a wandering cultivator">
     <!-- Shared gradients and filters for every layer below. -->
     <svg class="defs" aria-hidden="true">{@html WORLD_DEFS}{@html SKY_DEFS}</svg>
 
@@ -201,6 +227,17 @@
             </g>
         </svg>
 
+        {#if mood !== "clear"}
+            <div class="overcast" aria-hidden="true">
+                {#each clouds as cloud, i}
+                    <div class="cloud c{i + 1}">{@html cloud}</div>
+                {/each}
+            </div>
+        {/if}
+        {#if mood === "storm"}
+            <div class="bolt" class:strike style:left="{boltX}%" aria-hidden="true">{@html bolt}</div>
+        {/if}
+
         {#each [["far", world.far], ["mid", world.mid], ["near", world.near]] as [depth, art] (depth)}
             <div class="strip {depth}" style:transform={slide(PARALLAX[depth as keyof typeof PARALLAX])}>
                 <svg viewBox="0 0 {2 * TILE} {WORLD_H}" aria-hidden="true">
@@ -214,12 +251,18 @@
 
         <!-- A small box that rides on a transform: walking never repaints the scene. -->
         <svg class="actor" viewBox="-110 -130 180 140" style:transform={actorAt(fx, figY)} aria-hidden="true">
-            <Wanderer x={0} y={0} {pose} {step} />
+            <Wanderer x={0} y={0} {pose} {step} umbrella={wet} />
         </svg>
 
         <div class="mist" aria-hidden="true">
             <span></span><span></span><span></span>
         </div>
+        {#if wet}
+            <Rain density={mood === "storm" ? 20 : 13} heavy={mood === "storm"} land={[0.66, 0.98]} />
+        {/if}
+        {#if mood === "storm"}
+            <div class="flash" class:strike aria-hidden="true"></div>
+        {/if}
     </div>
 
     <div class="title">
@@ -231,6 +274,12 @@
 
     <div class="caption">
         <p class="name">lscythe <em>— a wanderer of the crooked path</em></p>
+        {#if weather.now && weather.now.condition !== "clear"}
+            <p class="weather-now">
+                Jakarta now · <span class="glyph">{weather.now.glyph}</span>
+                {weather.now.label}{weather.now.temp !== null ? ` · ${weather.now.temp}°C` : ""}
+            </p>
+        {/if}
         <p class="seed">
             Painting <span>No. {seed}</span><span class="hint"> — press the seal to paint the world anew</span>
         </p>
@@ -325,14 +374,18 @@
     }
 
     .disc {
-        transition: transform 0.75s cubic-bezier(0.55, 0, 0.9, 0.4);
+        transition:
+            transform 0.75s cubic-bezier(0.55, 0, 0.9, 0.4),
+            opacity 2s ease;
 
         &.sunk {
             transform: translateY(620px);
         }
 
         &:not(.sunk) {
-            transition: transform 1.3s cubic-bezier(0.15, 0.6, 0.3, 1);
+            transition:
+                transform 1.3s cubic-bezier(0.15, 0.6, 0.3, 1),
+                opacity 2s ease;
         }
     }
 
@@ -416,6 +469,194 @@
             fill: var(--figure);
             stroke: var(--ink-soft);
             stroke-width: 0.5;
+        }
+    }
+
+    /* ---- Weather ---------------------------------------------------- */
+
+    .weather-cloudy .disc {
+        opacity: 0.7;
+    }
+
+    .weather-fog .disc {
+        opacity: 0.45;
+    }
+
+    .weather-rain .disc,
+    .weather-storm .disc {
+        opacity: 0.22;
+    }
+
+    /* Rain darkens the sky like a wash laid over the top of the sheet. */
+    .weather-rain .layers::before,
+    .weather-storm .layers::before {
+        content: "";
+        position: absolute;
+        inset: 0 0 40%;
+        z-index: 1;
+        background: linear-gradient(var(--ink), transparent);
+        opacity: 0.1;
+        pointer-events: none;
+    }
+
+    .overcast {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+        pointer-events: none;
+    }
+
+    .cloud {
+        position: absolute;
+        left: 0;
+        width: clamp(700px, 92vw, 1500px);
+        aspect-ratio: 1000 / 560;
+        will-change: transform;
+        animation: cloud-pass 90s linear infinite;
+
+        :global(svg) {
+            width: 100%;
+            height: 100%;
+        }
+
+        :global(.cloud-wash) {
+            fill: var(--ink);
+            opacity: 0.16;
+        }
+
+        :global(.cloud-line) {
+            fill: var(--ink);
+            opacity: 0.45;
+        }
+
+        &.c1 {
+            top: -20%;
+            animation-duration: 75s;
+            animation-delay: -12s;
+        }
+
+        &.c2 {
+            top: -8%;
+            animation-duration: 105s;
+            animation-delay: -60s;
+            scale: 0.8;
+        }
+
+        &.c3 {
+            top: -27%;
+            animation-duration: 130s;
+            animation-delay: -95s;
+            scale: 1.25;
+        }
+
+        &.c4 {
+            top: 1%;
+            animation-duration: 90s;
+            animation-delay: -35s;
+            scale: 0.65;
+        }
+    }
+
+    .weather-rain .cloud :global(.cloud-wash),
+    .weather-storm .cloud :global(.cloud-wash) {
+        opacity: 0.3;
+    }
+
+    .weather-fog .cloud :global(.cloud-wash) {
+        opacity: 0.1;
+    }
+
+    /* Fog: the mist banks thicken and climb. */
+    .weather-fog .mist span {
+        height: 40vmax;
+        background: radial-gradient(closest-side, var(--paper), transparent);
+    }
+
+    .weather-fog .layers::after {
+        content: "";
+        position: absolute;
+        inset: 25% 0 0;
+        background: linear-gradient(transparent, color-mix(in srgb, var(--paper) 70%, transparent) 60%);
+        pointer-events: none;
+    }
+
+    .bolt {
+        position: absolute;
+        top: 0;
+        width: clamp(70px, 9vw, 130px);
+        aspect-ratio: 200 / 440;
+        opacity: 0;
+        pointer-events: none;
+
+        :global(path) {
+            fill: var(--ink);
+        }
+
+        &.strike {
+            animation: strike 0.7s ease-out;
+            filter: drop-shadow(0 0 10px var(--glow));
+        }
+    }
+
+    .flash {
+        position: absolute;
+        inset: 0;
+        background: var(--paper);
+        opacity: 0;
+        pointer-events: none;
+
+        &.strike {
+            animation: flash 0.7s ease-out;
+        }
+    }
+
+    .weather-now {
+        font-style: italic;
+        color: var(--ink-soft);
+
+        .glyph {
+            font-family: var(--font-brush);
+            font-style: normal;
+            color: var(--blood);
+        }
+    }
+
+    @keyframes cloud-pass {
+        from {
+            transform: translateX(100vw);
+        }
+        to {
+            transform: translateX(-110%);
+        }
+    }
+
+    @keyframes strike {
+        0%,
+        100% {
+            opacity: 0;
+        }
+        8%,
+        30% {
+            opacity: 1;
+        }
+        18% {
+            opacity: 0.3;
+        }
+    }
+
+    @keyframes flash {
+        0%,
+        100% {
+            opacity: 0;
+        }
+        8% {
+            opacity: 0.55;
+        }
+        18% {
+            opacity: 0.1;
+        }
+        28% {
+            opacity: 0.4;
         }
     }
 
@@ -613,6 +854,10 @@
 
         .disc {
             transition: none;
+        }
+
+        .cloud {
+            animation: none;
         }
     }
 </style>

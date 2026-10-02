@@ -26,6 +26,12 @@
             performance optimization purposes.
         </p>
         <p>
+            The weather painted across the site is Jakarta's current weather from
+            <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Open-Meteo</a>. It is
+            fetched by this site's own server every ten minutes, so your browser never contacts Open-Meteo and
+            nothing about you is sent to it.
+        </p>
+        <p>
             <a href={cfPolicy} target="_blank" rel="noopener noreferrer">read more on cloudflare</a>
         </p>
     </div>

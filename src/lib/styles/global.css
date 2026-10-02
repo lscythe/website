@@ -492,3 +492,63 @@ hr {
         transition: none;
     }
 }
+
+/* Ink drops (see $lib/ink/drops.ts): bloom into a splash, then dry. */
+.drop {
+    position: absolute;
+    background: var(--ink);
+    mask-repeat: no-repeat;
+    mask-size: contain;
+    mask-position: center;
+    opacity: 0;
+    pointer-events: none;
+    animation: drop-life var(--life) cubic-bezier(0.2, 0.7, 0.3, 1) forwards;
+
+    &.blood {
+        background: var(--blood);
+    }
+}
+
+/* A drop on its way down: a stretched bead of ink. */
+.falling {
+    position: absolute;
+    width: 7px;
+    height: 16px;
+    margin: -16px 0 0 -3.5px;
+    border-radius: 50% 50% 50% 50% / 30% 30% 70% 70%;
+    background: var(--ink);
+    opacity: 0.35;
+    pointer-events: none;
+    animation: drop-fall var(--ms) cubic-bezier(0.5, 0, 1, 1) both;
+
+    &.blood {
+        background: var(--blood);
+    }
+}
+
+@keyframes drop-life {
+    0% {
+        opacity: 0;
+        transform: scale(0.2);
+    }
+    18% {
+        opacity: var(--peak);
+        transform: scale(1);
+    }
+    60% {
+        opacity: var(--peak);
+    }
+    100% {
+        opacity: 0;
+        transform: scale(1.06);
+    }
+}
+
+@keyframes drop-fall {
+    from {
+        transform: translateY(var(--from)) scaleY(1.6);
+    }
+    to {
+        transform: translateY(0) scaleY(1);
+    }
+}

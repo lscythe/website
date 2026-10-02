@@ -160,3 +160,66 @@ export const SKY_DEFS = `
     <feGaussianBlur in="d" stdDeviation="2.5"/>
   </filter>
 </defs>`;
+
+/* ------------------------------------------------------------------ */
+/* Weather                                                             */
+/* ------------------------------------------------------------------ */
+
+/**
+ * A rain cloud in ink: overlapping washes that bleed into each other, with a
+ * scroll of curling brush strokes along its belly. The cloud itself spans
+ * about 600 x 240 inside a 1000 x 560 box.
+ */
+export function inkCloud(seed: number): string {
+  const rand = createRand(seed);
+  const noise = createNoise(rand);
+  const out: string[] = [];
+  const lobes = 5 + Math.floor(rand() * 3);
+  for (let i = 0; i < lobes; i++) {
+    const cx = 80 + (i / (lobes - 1)) * 440 + between(rand, -30, 30);
+    const cy = 130 - Math.sin((i / (lobes - 1)) * Math.PI) * between(rand, 30, 60);
+    out.push(`<ellipse class="cloud-wash" cx="${r(cx)}" cy="${r(cy)}" rx="${r(between(rand, 70, 120))}" ry="${r(between(rand, 45, 70))}" filter="url(#cloud-bleed)"/>`);
+  }
+  // Belly strokes, each ending in a small curl.
+  for (let k = 0; k < 3; k++) {
+    const y = 165 + k * 14;
+    const x0 = between(rand, 40, 120);
+    const x1 = between(rand, 420, 560);
+    const line: Pt[] = [];
+    for (let i = 0; i <= 24; i++) {
+      const t = i / 24;
+      line.push([x0 + (x1 - x0) * t, y + Math.sin(t * Math.PI * 3 + k) * 5 + (noise(t * 3, k + seed) - 0.5) * 8]);
+    }
+    const [hx, hy] = line[line.length - 1];
+    for (let i = 0; i <= 12; i++) {
+      const a = (i / 12) * Math.PI * 1.7;
+      line.push([hx + Math.sin(a) * 11, hy - 11 + Math.cos(a) * 11]);
+    }
+    out.push(`<path class="cloud-line" d="${brush(line, noise, { width: between(rand, 3, 6), wobble: 1, offset: k * 3 + seed })}"/>`);
+  }
+  // Generous margins: the wash is displaced and blurred well past its shapes,
+  // and must fade out inside the box rather than be cut off at its edge.
+  return `<svg viewBox="-200 -160 1000 560" aria-hidden="true"><defs><filter id="cloud-bleed-${seed}" x="-60%" y="-60%" width="220%" height="220%"><feTurbulence type="fractalNoise" baseFrequency="0.025" numOctaves="3" seed="${seed}" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="34" result="d"/><feGaussianBlur in="d" stdDeviation="9"/></filter></defs>${out.join("").replaceAll("url(#cloud-bleed)", `url(#cloud-bleed-${seed})`)}</svg>`;
+}
+
+/** A forked bolt of lightning, written as one jagged brush stroke. */
+export function lightning(seed: number): string {
+  const rand = createRand(seed);
+  const noise = createNoise(rand);
+  const main: Pt[] = [];
+  let x = 100;
+  let y = 0;
+  while (y < 420) {
+    main.push([x, y]);
+    x += between(rand, -26, 26);
+    y += between(rand, 22, 44);
+  }
+  const fork: Pt[] = [main[Math.floor(main.length * 0.45)]];
+  let [fx, fy] = fork[0];
+  for (let i = 0; i < 5; i++) {
+    fx += between(rand, 8, 30);
+    fy += between(rand, 18, 34);
+    fork.push([fx, fy]);
+  }
+  return `<svg viewBox="0 0 200 440" aria-hidden="true"><path d="${brush(main, noise, { width: 7, taper: "end", wobble: 0.6, offset: seed })}"/><path d="${brush(fork, noise, { width: 4, taper: "end", wobble: 0.6, offset: seed + 1 })}"/></svg>`;
+}

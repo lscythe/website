@@ -12,12 +12,15 @@
     import Footer from "$lib/components/Footer.svelte";
     import InkTrail from "$lib/components/InkTrail.svelte";
     import InkAmbient from "$lib/components/InkAmbient.svelte";
+    import WeatherLayer from "$lib/components/WeatherLayer.svelte";
+    import { initWeather } from "$lib/weather.svelte";
     import { onMount } from "svelte";
     import { initTheme } from "$lib/theme.svelte";
 
     let { children } = $props();
 
     onMount(initTheme);
+    onMount(initWeather);
 </script>
 
 <a class="skip" href="#main">skip to content</a>
@@ -28,6 +31,7 @@
 <Footer />
 <InkTrail />
 <InkAmbient />
+<WeatherLayer />
 
 <style>
     main {

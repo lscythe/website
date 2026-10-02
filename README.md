@@ -19,6 +19,15 @@ scattered on top. Colours come from CSS, so the same painting works on paper (li
   the sky (`sky.ts`) has cranes by day and bats by night
 - the theme toggle sets the sun and raises the moon (`src/lib/theme.svelte.ts`)
 
+## weather
+
+The painting follows Jakarta's current weather. `worker/index.ts` (the Cloudflare Worker that
+serves the site) answers `/api/weather` from [Open-Meteo](https://open-meteo.com/), cached for ten
+minutes, so visitors' browsers never call a third party. Clear skies change nothing; cloudy and
+fog bring drifting ink clouds and haze; rain brings ink rain, the wanderer's red umbrella and drops
+splashing between pages; a storm adds lightning. Add `?weather=clear|cloudy|fog|rain|storm` to any
+URL to preview a mood. Under `bun run dev` there is no Worker, so the sky stays clear.
+
 The splash and brush-stroke shapes used around the site are CSS masks in `static/ink/`,
 regenerated with `bun scripts/ink-assets.ts`.
 
@@ -43,4 +52,4 @@ show up on `/blog`, in `/rss.xml` and in `/sitemap.xml`.
 ## deploy
 
 `bun run build` writes static files to `dist`, which `wrangler deploy` serves on Cloudflare
-Workers (the GitHub Action does this on push to `main`).
+Workers together with the weather Worker (`bun run pre-deploy` runs both locally) (the GitHub Action does this on push to `main`).
