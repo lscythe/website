@@ -1,22 +1,28 @@
 {
   "name": "website",
   "type": "module",
-  "version": "0.0.1",
+  "version": "0.1.0",
+  "private": true,
   "scripts": {
-    "dev": "astro dev",
-    "build": "echo \"VITE_GIT_COMMIT=$(git rev-parse --short HEAD)\" > .env && astro build",
-    "preview": "astro preview",
-    "astro": "astro",
+    "dev": "vite dev",
+    "build": "echo \"VITE_GIT_COMMIT=$(git rev-parse --short HEAD)\" > .env && vite build",
+    "preview": "vite preview",
+    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "pre-deploy": "bun run build && wrangler dev",
     "deploy": "bun run build && wrangler deploy"
   },
-  "dependencies": {
-    "@astrojs/rss": "^4.0.13",
-    "@astrojs/sitemap": "^3.6.0",
-    "astro": "^5.15.3",
-    "ultrahtml": "^1.6.0"
-  },
   "devDependencies": {
+    "@fontsource/cormorant-garamond": "^5.3.0",
+    "@fontsource/lilex": "^5.3.0",
+    "@fontsource/ma-shan-zheng": "^5.3.1",
+    "@sveltejs/adapter-static": "^3.0.10",
+    "@sveltejs/kit": "^2.70.3",
+    "@sveltejs/vite-plugin-svelte": "^6.2.0",
+    "mdsvex": "^0.12.8",
+    "svelte": "^5.57.1",
+    "svelte-check": "^4.3.0",
+    "typescript": "^5.9.0",
+    "vite": "^7.1.0",
     "wrangler": "^4.45.4"
   }
 }

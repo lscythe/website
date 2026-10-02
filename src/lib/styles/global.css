@@ -1,0 +1,254 @@
+:root {
+    --font-mono: "Lilex", ui-monospace, monospace;
+    --font-serif: "Cormorant Garamond", "Iowan Old Style", Georgia, serif;
+    --font-brush: "Ma Shan Zheng", "STKaiti", "KaiTi", serif;
+
+    --max-content-width: 1280px;
+
+    --font-xs: 0.75rem;
+    --font-sm: 0.875rem;
+    --font-md: 1rem;
+    --font-lg: 1.25rem;
+    --font-xl: 1.5rem;
+    --font-2xl: 2rem;
+
+    --space-xs: 0.25rem;
+    --space-sm: 0.5rem;
+    --space-md: 1rem;
+    --space-lg: 2rem;
+    --space-xl: 4rem;
+    --space-2xl: 6rem;
+
+    /* "paper" is rice paper and ink; "night" is the demonic path. */
+    color-scheme: light dark;
+    --paper: light-dark(#e8e2d6, #0a0808);
+    --paper-raised: light-dark(#ded7c9, #131010);
+    --ink: light-dark(#1b1715, #ddd4c6);
+    --ink-soft: light-dark(#4f4640, #9d9389);
+    --ink-faint: light-dark(#8c827a, #4f4843);
+    --wash: light-dark(#4a3f36, #5d544c);
+    --blood: light-dark(#b3141c, #d3131f);
+    --blood-deep: light-dark(#7a0c11, #7d0a10);
+    --seal-text: light-dark(#f3ece0, #f6eadf);
+    --vortex: light-dark(rgb(27 23 21 / 0), rgb(221 212 198 / 0.07));
+    --figure: light-dark(#141110, #050404);
+    --figure-edge: light-dark(transparent, #6f655c);
+    --glow: light-dark(rgb(179 20 28 / 0.45), rgb(211 19 31 / 0.75));
+
+    &[theme="dark"] {
+        color-scheme: dark;
+    }
+
+    &[theme="light"] {
+        color-scheme: light;
+    }
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
+    background: var(--paper);
+}
+
+html,
+body {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: var(--font-md);
+    line-height: 1.65;
+    color: var(--ink);
+}
+
+body {
+    min-height: 100svh;
+    overflow-x: hidden;
+}
+
+/* Paper grain over everything, so flat colour never looks digital. */
+body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 50;
+    opacity: 0.22;
+    mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.3 0 0 0 0 0.25 0 0 0 0 0.2 0 0 0 0.55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+:root[theme="dark"] body::after {
+    mix-blend-mode: screen;
+    opacity: 0.08;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([theme="light"]) body::after {
+        mix-blend-mode: screen;
+        opacity: 0.08;
+    }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    :root {
+        scroll-behavior: smooth;
+    }
+}
+
+::selection {
+    background: var(--blood);
+    color: var(--seal-text);
+}
+
+html {
+    scrollbar-color: var(--blood) var(--paper);
+}
+
+h1,
+h2,
+h3 {
+    font-family: var(--font-serif);
+    font-weight: 600;
+    line-height: 1.05;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+}
+
+h1 {
+    font-size: clamp(2.6rem, 7vw, 5.5rem);
+    font-style: italic;
+    font-weight: 500;
+}
+
+h2 {
+    font-size: clamp(2rem, 5vw, 3.6rem);
+}
+
+h3 {
+    font-size: clamp(1.5rem, 3vw, 2.2rem);
+}
+
+p {
+    max-width: 68ch;
+}
+
+strong {
+    color: var(--blood);
+    font-weight: 600;
+}
+
+a {
+    color: var(--ink);
+    text-decoration: underline;
+    text-decoration-color: var(--blood);
+    text-decoration-thickness: 2px;
+    text-underline-offset: 0.3em;
+    overflow-wrap: break-word;
+    transition:
+        color 0.2s,
+        background-size 0.35s cubic-bezier(0.7, 0, 0.2, 1);
+    background: linear-gradient(var(--blood), var(--blood)) no-repeat left bottom / 0 100%;
+
+    &:hover {
+        color: var(--seal-text);
+        text-decoration-color: transparent;
+        background-size: 100% 100%;
+    }
+}
+
+:focus-visible {
+    outline: 2px dashed var(--blood);
+    outline-offset: 4px;
+}
+
+hr {
+    border: none;
+    height: 2px;
+    background: linear-gradient(90deg, var(--blood), transparent);
+}
+
+.container {
+    width: 100%;
+    max-width: var(--max-content-width);
+    margin: 0 auto;
+    padding: var(--space-2xl) var(--space-xl) var(--space-xl);
+}
+
+@media (width < 768px) {
+    .container {
+        padding: var(--space-2xl) var(--space-md) var(--space-lg);
+    }
+}
+
+/* A page title written as a vertical brush column beside the content. */
+.folio {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: var(--space-lg);
+    align-items: start;
+}
+
+.folio-mark {
+    writing-mode: vertical-rl;
+    font-family: var(--font-brush);
+    font-size: clamp(3rem, 8vw, 6.5rem);
+    line-height: 1;
+    color: var(--blood);
+    position: sticky;
+    top: var(--space-2xl);
+    user-select: none;
+}
+
+.eyebrow {
+    font-size: var(--font-xs);
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+}
+
+@media (width < 600px) {
+    .folio {
+        grid-template-columns: 1fr;
+    }
+
+    .folio-mark {
+        writing-mode: horizontal-tb;
+        position: static;
+    }
+}
+
+/* ------------------------------------------------------------------ */
+/* Ink painting classes, shared by every generated scene.              */
+/* ------------------------------------------------------------------ */
+
+.ink-scene {
+    .ink {
+        fill: var(--ink);
+    }
+    .ink-soft {
+        fill: var(--ink);
+        opacity: 0.7;
+    }
+    .ink-faint {
+        fill: var(--ink);
+        opacity: 0.4;
+    }
+    .ink-body {
+        fill: var(--paper);
+    }
+    .wash {
+        stop-color: var(--wash);
+    }
+    .fog {
+        stop-color: var(--paper);
+    }
+    .blood {
+        stop-color: var(--blood);
+    }
+    .sun {
+        fill: var(--blood);
+    }
+}
