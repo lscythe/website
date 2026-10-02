@@ -21,7 +21,7 @@
     "mdsvex": "^0.12.8",
     "svelte": "^5.57.1",
     "svelte-check": "^4.3.0",
-    "typescript": "^5.9.0",
+    "typescript": "^7.0.2",
     "vite": "^7.1.0",
     "wrangler": "^4.45.4"
   }
