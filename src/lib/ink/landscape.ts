@@ -8,15 +8,15 @@ export const SCENE_H = 900;
 export const FIGURE_X = 724;
 export const SUN = { x: 905, y: 285, r: 52 };
 
-type Depth = "far" | "mid" | "near";
+export type Depth = "far" | "mid" | "near";
 
-interface Painter {
+export interface Painter {
   rand: Rand;
   noise: Noise;
   out: string[];
 }
 
-const DEPTH = {
+export const DEPTH = {
   far: { stroke: 1.6, texture: 0.25, dots: 0.2, trees: 0 },
   mid: { stroke: 2.6, texture: 0.7, dots: 0.7, trees: 0.4 },
   near: { stroke: 3.6, texture: 1, dots: 1, trees: 1 },
@@ -26,7 +26,7 @@ const DEPTH = {
 /* Mountains                                                           */
 /* ------------------------------------------------------------------ */
 
-interface MountainSpec {
+export interface MountainSpec {
   x: number;
   base: number;
   w: number;
@@ -36,7 +36,7 @@ interface MountainSpec {
   crag?: number;
 }
 
-function ridgeOf(p: Painter, m: MountainSpec, seed: number): Pt[] {
+export function ridgeOf(p: Painter, m: MountainSpec, seed: number): Pt[] {
   const { noise, rand } = p;
   const n = Math.max(30, Math.round(m.w / 7));
   const crag = m.crag ?? 0.5;
@@ -63,7 +63,7 @@ function ridgeOf(p: Painter, m: MountainSpec, seed: number): Pt[] {
   return pts;
 }
 
-function paintRock(
+export function paintRock(
   p: Painter,
   ridge: Pt[],
   base: number,
@@ -159,7 +159,7 @@ function paintRock(
   }
 }
 
-function mountain(p: Painter, m: MountainSpec, wash: string) {
+export function mountain(p: Painter, m: MountainSpec, wash: string) {
   const seed = p.rand() * 100;
   paintRock(p, ridgeOf(p, m, seed), m.base, m.depth, seed, wash);
 }
@@ -197,7 +197,7 @@ function ledge(p: Painter, edgeX: number, topY: number, base: number): number {
 /* Trees, birds, sun                                                   */
 /* ------------------------------------------------------------------ */
 
-function pine(p: Painter, x: number, y: number, size: number) {
+export function pine(p: Painter, x: number, y: number, size: number) {
   const { rand, noise, out } = p;
   const lean = between(rand, -0.35, 0.35);
   const trunk: Pt[] = [];
@@ -242,11 +242,11 @@ function farRange(p: Painter, base: number) {
   }
 }
 
-function mist(id: string, y: number, h: number) {
+export function mist(id: string, y: number, h: number) {
   return `<rect x="-100" y="${y}" width="${SCENE_W + 200}" height="${h}" fill="url(#${id})"/>`;
 }
 
-const DEFS = `
+export const DEFS = `
 <defs>
   <linearGradient id="wash-far" x1="0" y1="0" x2="0" y2="1">
     <stop offset="0" class="wash" stop-opacity="0.22"/><stop offset="0.6" class="wash" stop-opacity="0"/>

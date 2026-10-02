@@ -7,14 +7,17 @@
     let { data } = $props();
 </script>
 
-<Seo title="lscythe" />
+<Seo />
 
 <Landscape seed={data.seed} />
 
 <div class="container chapters">
     <section id="prelude" class="chapter">
         <header>
-            <span class="num">{NUMERALS[0]}</span>
+            <span class="num">
+                <span class="ink-splash blood" data-ink aria-hidden="true"></span>
+                {NUMERALS[0]}
+            </span>
             <span class="eyebrow">prelude</span>
         </header>
         <div>
@@ -29,17 +32,27 @@
         </div>
     </section>
 
+    <hr class="ink-rule" data-ink />
+
     <section class="chapter">
         <header>
-            <span class="num">{NUMERALS[1]}</span>
+            <span class="num">
+                <span class="ink-splash two" data-ink aria-hidden="true"></span>
+                {NUMERALS[1]}
+            </span>
             <span class="eyebrow">a verse</span>
         </header>
         <Verse text={data.quote.text} author={data.quote.author} />
     </section>
 
+    <hr class="ink-rule alt" data-ink />
+
     <section class="chapter">
         <header>
-            <span class="num">{NUMERALS[2]}</span>
+            <span class="num">
+                <span class="ink-splash three blood" data-ink aria-hidden="true"></span>
+                {NUMERALS[2]}
+            </span>
             <span class="eyebrow">paths to reach me</span>
         </header>
         <ol class="paths">
@@ -63,9 +76,6 @@
         gap: var(--space-lg);
         padding: var(--space-xl) 0;
 
-        & + .chapter {
-            border-top: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
-        }
 
         header {
             display: flex;
@@ -79,6 +89,17 @@
     }
 
     .num {
+        position: relative;
+        isolation: isolate;
+
+        .ink-splash {
+            --size: 9rem;
+            left: 50%;
+            top: 50%;
+            margin: calc(var(--size) / -2) 0 0 calc(var(--size) / -2);
+            z-index: -1;
+        }
+
         font-family: var(--font-brush);
         font-size: clamp(3rem, 7vw, 5rem);
         line-height: 1;

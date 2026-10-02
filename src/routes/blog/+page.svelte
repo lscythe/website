@@ -15,7 +15,7 @@
     const empty = $derived(data.series.length === 0 && data.loose.length === 0);
 </script>
 
-<Seo title="writings" description="Series and notes on Android, architecture and the craft." />
+<Seo title="Writings" description="Series and notes on Android, architecture and the craft." />
 
 <div class="container folio">
     <div class="folio-mark" aria-hidden="true">手记</div>
@@ -38,6 +38,7 @@
                             <p class="meta">{series.posts.length} parts · {span(series.posts)}</p>
                         </div>
                     </header>
+                    <hr class="ink-rule {i % 2 ? 'alt' : ''}" data-ink />
                     <ol class="parts">
                         {#each series.posts as post, part}
                             <li>
@@ -119,7 +120,6 @@
         list-style: none;
         margin: 0;
         padding: 0;
-        border-top: 1px solid color-mix(in srgb, var(--ink) 15%, transparent);
 
         li {
             border-bottom: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);

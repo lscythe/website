@@ -4,5 +4,5 @@
     import Deviation from "$lib/components/Deviation.svelte";
 </script>
 
-<Seo title={String(page.status)} />
+<Seo title={page.status === 404 ? "走火入魔" : String(page.status)} />
 <Deviation status={page.status} message={page.status === 404 ? "" : page.error?.message} />

@@ -1,27 +1,15 @@
 <script lang="ts">
     import { onMount } from "svelte";
+    import { setTheme, theme } from "$lib/theme.svelte";
 
     const inceptionYear = 2025;
-    const THEMES = [
-        { value: "light", glyph: "墨", label: "Paper" },
-        { value: "dark", glyph: "魔", label: "Night" },
-        { value: "system", glyph: "自", label: "Auto" },
-    ];
 
     let years = $state(`${inceptionYear}`);
-    let theme = $state("system");
 
     onMount(() => {
         const current = new Date().getFullYear();
         if (current > inceptionYear) years = `${inceptionYear}–${current}`;
-        theme = localStorage.getItem("theme") || "system";
     });
-
-    function setTheme(value: string) {
-        theme = value;
-        document.documentElement.setAttribute("theme", value);
-        localStorage.setItem("theme", value);
-    }
 </script>
 
 <footer>
@@ -36,19 +24,11 @@
             <a href="/rss.xml" data-sveltekit-reload>RSS</a>
         </div>
         <div class="bottom">
-            <div class="themes" role="group" aria-label="Colour theme">
-                {#each THEMES as t}
-                    <button
-                        type="button"
-                        aria-pressed={theme === t.value}
-                        title={t.value === "system" ? "Follow your device" : t.label}
-                        onclick={() => setTheme(t.value)}
-                    >
-                        <span class="glyph" aria-hidden="true">{t.glyph}</span>
-                        {t.label}
-                    </button>
-                {/each}
-            </div>
+            {#if theme.choice !== "system"}
+                <button type="button" class="follow" onclick={() => setTheme("system")}>
+                    <span class="glyph" aria-hidden="true">自</span> Follow my device's light
+                </button>
+            {/if}
             <span class="credit">
                 Mountains grown after <a href="https://github.com/LingDong-/shan-shui-inf">shan-shui-inf</a>
             </span>
@@ -79,12 +59,15 @@
         }
     }
 
+    /* A single loaded stroke of blood-red ink across the top. */
     footer::before {
         content: "";
         position: absolute;
         inset: 0 var(--space-lg) auto;
-        height: 2px;
-        background: linear-gradient(90deg, transparent, var(--blood) 20%, var(--blood) 60%, transparent);
+        height: 0.8rem;
+        background: var(--blood);
+        opacity: 0.85;
+        mask: url("/ink/stroke-1.svg") no-repeat left center / 100% 100%;
     }
 
     .brush {
@@ -119,24 +102,14 @@
         color: var(--ink);
     }
 
-    .themes {
-        display: flex;
-        flex-wrap: wrap;
-        gap: var(--space-sm);
-    }
-
-    button {
+    .follow {
         all: unset;
         cursor: pointer;
         display: inline-flex;
         align-items: center;
         gap: 0.4em;
-        padding: 0.15em 0.7em 0.15em 0.2em;
-        border: 1px solid color-mix(in srgb, var(--ink) 20%, transparent);
-        border-radius: 3px;
         font-style: italic;
         color: var(--ink-soft);
-        transition: color 0.2s, border-color 0.2s;
 
         &:hover {
             color: var(--ink);
@@ -145,16 +118,6 @@
         &:focus-visible {
             outline: 2px dashed var(--blood);
             outline-offset: 3px;
-        }
-
-        &[aria-pressed="true"] {
-            color: var(--ink);
-            border-color: var(--blood);
-        }
-
-        &[aria-pressed="true"] .glyph {
-            background: var(--blood);
-            color: var(--seal-text);
         }
     }
 
@@ -174,14 +137,4 @@
         font-style: italic;
     }
 
-    @media (width < 400px) {
-        .themes {
-            gap: var(--space-xs);
-        }
-
-        button {
-            padding: 0.1em 0.5em 0.1em 0.15em;
-            font-size: 1rem;
-        }
-    }
 </style>

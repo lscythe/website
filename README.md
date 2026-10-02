@@ -14,6 +14,13 @@ scattered on top. Colours come from CSS, so the same painting works on paper (li
 
 - every build paints a new world; press the red seal to repaint it in the browser
 - `/?seed=42` always paints the same landscape, so a seed can be shared
+- the hero is an endless handscroll (`src/lib/ink/world.ts`): three strips slide left at
+  different speeds while the wanderer walks the rock tops, waits at pavilions and jumps the gaps;
+  the sky (`sky.ts`) has cranes by day and bats by night
+- the theme toggle sets the sun and raises the moon (`src/lib/theme.svelte.ts`)
+
+The splash and brush-stroke shapes used around the site are CSS masks in `static/ink/`,
+regenerated with `bun scripts/ink-assets.ts`.
 
 ## develop
 

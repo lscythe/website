@@ -3,5 +3,5 @@
     import Deviation from "$lib/components/Deviation.svelte";
 </script>
 
-<Seo title="404" />
+<Seo title="走火入魔" />
 <Deviation />

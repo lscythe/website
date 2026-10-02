@@ -1,10 +1,13 @@
 <script lang="ts">
     import { page } from "$app/state";
     import { NAV_LINKS } from "$lib/site";
+    import ThemeToggle from "./ThemeToggle.svelte";
 
     let hidden = $state(false);
     let atTop = $state(true);
     let menu: HTMLElement | undefined = $state();
+    let menuOpen = $state(false);
+    let headerHeight = $state(0);
     let lastY = 0;
 
     const current = (href: string) => page.url.pathname.startsWith(href);
@@ -20,18 +23,27 @@
 
 <svelte:window onscroll={onScroll} />
 
-<header class:hidden class:at-top={atTop}>
+<header class:hidden={hidden && !menuOpen} class:at-top={atTop && !menuOpen} class:open={menuOpen} bind:clientHeight={headerHeight}>
     <a href="/" class="mark" aria-label="lscythe, home">
         <span class="seal" aria-hidden="true">镰</span>
         <span class="word">lscythe</span>
     </a>
 
-    <button popovertarget="nav-mobile" title="menu" aria-label="toggle navigation">
+    <div class="tools">
+        <ThemeToggle />
+    <button popovertarget="nav-mobile" title="menu" aria-label="toggle navigation" aria-expanded={menuOpen}>
         <span aria-hidden="true">道</span>
     </button>
-    <nav popover id="nav-mobile" bind:this={menu}>
+    </div>
+    <nav
+        popover
+        id="nav-mobile"
+        bind:this={menu}
+        style:top="{headerHeight}px"
+        ontoggle={(e) => (menuOpen = (e as ToggleEvent).newState === "open")}
+    >
         {#each NAV_LINKS as link}
-            <a href={link.href} aria-current={current(link.href) ? "page" : undefined}>
+            <a href={link.href} aria-current={current(link.href) ? "page" : undefined} onclick={() => menu?.hidePopover()}>
                 <span class="glyph" aria-hidden="true">{link.glyph}</span>{link.label}
             </a>
         {/each}
@@ -70,6 +82,13 @@
 
         &.at-top {
             background: transparent;
+            backdrop-filter: none;
+            border-color: transparent;
+        }
+
+        /* With the menu open the bar and the menu read as one solid panel. */
+        &.open {
+            background: var(--paper);
             backdrop-filter: none;
             border-color: transparent;
         }
@@ -127,6 +146,14 @@
         font-size: 1.15em;
     }
 
+    .tools {
+        display: flex;
+        align-items: center;
+        gap: var(--space-sm);
+        order: 3;
+        margin-left: auto;
+    }
+
     .desktop {
         display: none;
         gap: var(--space-lg);
@@ -153,6 +180,14 @@
         color: var(--seal-text);
         border-radius: 3px;
         transform: rotate(-4deg);
+        transition: transform 0.3s;
+
+        &[aria-expanded="true"] {
+            transform: rotate(4deg);
+            background: var(--paper);
+            color: var(--blood);
+            box-shadow: inset 0 0 0 2px var(--blood);
+        }
     }
 
     #nav-mobile:popover-open {
@@ -160,7 +195,8 @@
         flex-direction: column;
         align-items: flex-end;
         gap: var(--space-md);
-        inset: 4rem 0 auto auto;
+        position: fixed;
+        inset: auto 0 auto 0;
         margin: 0;
         padding: var(--space-lg);
         width: 100%;
@@ -178,9 +214,17 @@
     }
 
     @media (width >= 768px) {
-        button,
+        button[popovertarget],
         #nav-mobile {
             display: none;
+        }
+
+        .desktop {
+            margin-left: auto;
+        }
+
+        .tools {
+            margin-left: var(--space-md);
         }
 
         .desktop {
