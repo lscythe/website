@@ -37,6 +37,11 @@ painted ahead of time when the page is idle, so switching swaps bitmaps under th
 Before script runs, and without it, `/scene/*.svg` (baked at build time, `src/lib/ink/stills.ts`)
 show the same painting as plain images.
 
+The brush font (Ma Shan Zheng, OFL) is cut to the characters the site actually uses:
+`static/fonts/ma-shan-zheng-subset.woff2`, about 24 KB. After writing new hanzi anywhere in `src/`,
+regenerate it with `python3 scripts/subset-brush-font.py MaShanZheng-Regular.ttf` (the full TTF is
+on Google Fonts; needs fonttools and brotli).
+
 The ink blots (`static/ink/blot-*.webp`) come from `python3 scripts/ink-blots.py` (needs numpy
 and Pillow); the brush strokes (`static/ink/stroke-*.svg`) from `bun scripts/ink-assets.ts`.
 

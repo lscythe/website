@@ -6,11 +6,9 @@
     import "@fontsource/cormorant-garamond/600.css";
     import "@fontsource/cormorant-garamond/400-italic.css";
     import "@fontsource/cormorant-garamond/500-italic.css";
-    import "@fontsource/ma-shan-zheng/400.css";
     import "$lib/styles/global.css";
     import Nav from "$lib/components/Nav.svelte";
     import Footer from "$lib/components/Footer.svelte";
-    import InkTrail from "$lib/components/InkTrail.svelte";
     import InkAmbient from "$lib/components/InkAmbient.svelte";
     import WeatherLayer from "$lib/components/WeatherLayer.svelte";
     import { initWeather } from "$lib/weather.svelte";
@@ -29,7 +27,6 @@
     {@render children()}
 </main>
 <Footer />
-<InkTrail />
 <InkAmbient />
 <WeatherLayer />
 
