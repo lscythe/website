@@ -133,7 +133,6 @@
     }
 
     .arrow {
-        font-family: var(--font-mono);
         font-size: var(--font-xl);
         transition: transform 0.3s;
     }

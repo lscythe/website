@@ -1,24 +1,13 @@
 <script lang="ts">
     import { page } from "$app/state";
     import { NAV_LINKS } from "$lib/site";
-    import { scramble } from "$lib/actions/scramble";
-
-    let { title }: { title?: string } = $props();
 
     let hidden = $state(false);
     let atTop = $state(true);
     let menu: HTMLElement | undefined = $state();
     let lastY = 0;
 
-    const crumbs = $derived(
-        page.url.pathname
-            .split("/")
-            .filter(Boolean)
-            .map((segment, index, all) => ({
-                label: decodeURIComponent(segment),
-                href: `/${all.slice(0, index + 1).join("/")}`,
-            })),
-    );
+    const current = (href: string) => page.url.pathname.startsWith(href);
 
     function onScroll() {
         const y = window.scrollY;
@@ -32,35 +21,27 @@
 <svelte:window onscroll={onScroll} />
 
 <header class:hidden class:at-top={atTop}>
-    <span class="label">
-        <a href="/" class="home" aria-label="home">~</a><span class="sep">/</span>
-        {#if title}
-            <span class="crumb">{title}</span>
-        {:else}
-            {#each crumbs as crumb, i}
-                {#if i > 0}<span class="sep">/</span>{/if}
-                <a class="crumb" href={crumb.href}>{crumb.label}</a>
-            {/each}
-        {/if}
-    </span>
+    <a href="/" class="mark" aria-label="lscythe, home">
+        <span class="seal" aria-hidden="true">镰</span>
+        <span class="word">lscythe</span>
+    </a>
 
     <button popovertarget="nav-mobile" title="menu" aria-label="toggle navigation">
         <span aria-hidden="true">道</span>
     </button>
     <nav popover id="nav-mobile" bind:this={menu}>
         {#each NAV_LINKS as link}
-            <a href={link.href}><span class="glyph" aria-hidden="true">{link.glyph}</span>{link.label}</a>
+            <a href={link.href} aria-current={current(link.href) ? "page" : undefined}>
+                <span class="glyph" aria-hidden="true">{link.glyph}</span>{link.label}
+            </a>
         {/each}
     </nav>
 
     <nav class="desktop">
         {#each NAV_LINKS as link}
-            <a
-                href={link.href}
-                aria-current={page.url.pathname.startsWith(link.href) ? "page" : undefined}
-            >
+            <a href={link.href} aria-current={current(link.href) ? "page" : undefined}>
                 <span class="glyph" aria-hidden="true">{link.glyph}</span>
-                <span use:scramble>{link.label}</span>
+                <span>{link.label}</span>
             </a>
         {/each}
     </nav>
@@ -103,22 +84,40 @@
         }
     }
 
-    .label {
+    .mark {
         display: flex;
         align-items: center;
-        white-space: nowrap;
-        overflow: hidden;
-        font-size: var(--font-sm);
+        gap: var(--space-sm);
+
+        &:hover {
+            color: var(--ink);
+        }
+
+        &:hover .seal {
+            transform: rotate(-8deg);
+        }
     }
 
-    .home {
-        font-size: var(--font-lg);
-        color: var(--blood);
+    .seal {
+        display: grid;
+        place-items: center;
+        width: 1.9rem;
+        height: 1.9rem;
+        background: var(--blood);
+        color: var(--seal-text);
+        font-family: var(--font-brush);
+        font-size: 1.3rem;
+        line-height: 1;
+        border-radius: 3px;
+        transform: rotate(3deg);
+        transition: transform 0.3s;
     }
 
-    .sep {
-        padding: 0 var(--space-sm);
-        color: var(--ink-faint);
+    .word {
+        font-family: var(--font-serif);
+        font-size: var(--font-xl);
+        font-style: italic;
+        font-weight: 600;
     }
 
     .glyph {
@@ -131,12 +130,12 @@
     .desktop {
         display: none;
         gap: var(--space-lg);
-        font-size: var(--font-sm);
+        font-family: var(--font-serif);
+        font-size: var(--font-lg);
+        font-style: italic;
 
         a[aria-current="page"] {
-            text-decoration: line-through;
-            text-decoration-color: var(--blood);
-            text-decoration-thickness: 2px;
+            color: var(--blood);
         }
     }
 

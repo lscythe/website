@@ -4,9 +4,9 @@ export const SITE_DESCRIPTION =
   "My humble website - It's a space for self-expression and to share what I've learned with the world";
 
 export const NAV_LINKS = [
-  { label: "/about", href: "/about", glyph: "我" },
-  { label: "/blog", href: "/blog", glyph: "书" },
-  { label: "/projects", href: "/projects", glyph: "棋" },
+  { label: "About", href: "/about", glyph: "我" },
+  { label: "Writings", href: "/blog", glyph: "书" },
+  { label: "Projects", href: "/projects", glyph: "棋" },
 ];
 
 export const SOCIALS = [
