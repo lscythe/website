@@ -1,5 +1,5 @@
 :root {
-    --font-mono: "Lilex", ui-monospace, monospace;
+    --font-body: "EB Garamond", "Iowan Old Style", Georgia, serif;
     --font-serif: "Cormorant Garamond", "Iowan Old Style", Georgia, serif;
     --font-brush: "Ma Shan Zheng", "STKaiti", "KaiTi", serif;
 
@@ -33,6 +33,7 @@
     --vortex: light-dark(rgb(27 23 21 / 0), rgb(221 212 198 / 0.07));
     --figure: light-dark(#141110, #050404);
     --figure-edge: light-dark(transparent, #6f655c);
+    --figure-light: light-dark(rgb(232 226 214 / 0.35), rgb(221 212 198 / 0.3));
     --glow: light-dark(rgb(179 20 28 / 0.45), rgb(211 19 31 / 0.75));
 
     &[theme="dark"] {
@@ -57,9 +58,9 @@ html {
 html,
 body {
     margin: 0;
-    font-family: var(--font-mono);
-    font-size: var(--font-md);
-    line-height: 1.65;
+    font-family: var(--font-body);
+    font-size: 1.15rem;
+    line-height: 1.6;
     color: var(--ink);
 }
 
@@ -203,9 +204,9 @@ hr {
 }
 
 .eyebrow {
-    font-size: var(--font-xs);
-    letter-spacing: 0.3em;
-    text-transform: uppercase;
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: var(--font-lg);
     color: var(--ink-soft);
 }
 

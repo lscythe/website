@@ -1,6 +1,8 @@
 <script lang="ts">
     import Seo from "$lib/components/Seo.svelte";
-    import avatar from "$lib/avatar.txt?raw";
+    import HangingScroll from "$lib/components/HangingScroll.svelte";
+
+    let { data } = $props();
 </script>
 
 <Seo title="about" />
@@ -8,13 +10,10 @@
 <div class="container folio">
     <div class="folio-mark" aria-hidden="true">吾名</div>
     <div>
-        <figure class="portrait">
-            <pre aria-label="ASCII portrait of Rendra">{avatar}</pre>
-            <figcaption>
-                <span class="eyebrow">portrait, in ascii ink</span>
-                <a href="/resume.pdf" data-sveltekit-reload>View Resume</a>
-            </figcaption>
-        </figure>
+        <div class="portrait">
+            <HangingScroll seed={data.seed} caption="The wanderer — painted anew with every build." />
+            <a href="/resume.pdf" data-sveltekit-reload>View Resume</a>
+        </div>
 
         <div class="content">
             <h1>Howdy!</h1>
@@ -57,37 +56,11 @@
 
 <style>
     .portrait {
-        margin: 0 0 var(--space-xl);
-        width: fit-content;
-        max-width: 100%;
-    }
-
-    pre {
-        margin: 0;
-        padding: var(--space-md);
-        font-family: inherit;
-        font-size: clamp(0.13rem, 0.55vw, 0.24rem);
-        line-height: 1.2;
-        white-space: pre;
-        overflow: hidden;
-        color: var(--ink);
-        background:
-            radial-gradient(circle at 70% 40%, color-mix(in srgb, var(--blood) 22%, transparent), transparent 60%),
-            var(--paper-raised);
-        border-left: 3px solid var(--blood);
-        transition: color 0.6s;
-
-        &:hover {
-            color: var(--blood);
-        }
-    }
-
-    figcaption {
         display: flex;
-        justify-content: space-between;
-        gap: var(--space-md);
-        margin-top: var(--space-sm);
-        font-size: var(--font-sm);
+        flex-wrap: wrap;
+        align-items: flex-end;
+        gap: var(--space-lg);
+        margin: 0 0 var(--space-xl);
     }
 
     .content h1 {

@@ -1,5 +1,6 @@
 <script lang="ts">
     import { onMount } from "svelte";
+    import Wanderer from "./Wanderer.svelte";
     import {
         FIGURE_X,
         paintBirds,
@@ -49,28 +50,7 @@
         </svg>
         <svg class="life" {viewBox} preserveAspectRatio="xMidYMax slice" aria-hidden="true">
             <g class="birds">{@html birds}</g>
-            <g class="wanderer" transform="translate({FIGURE_X} {scene.footY}) scale(1.25)">
-                <path class="ribbon" d="M-2 -45C-18 -52-30-38-52-47C-40-39-24-44-2-41Z">
-                    <animate
-                        attributeName="d"
-                        dur="2.6s"
-                        repeatCount="indefinite"
-                        values="M-2 -45C-18 -52-30-38-52-47C-40-39-24-44-2-41Z;M-2 -45C-20 -44-32-50-55-41C-42-38-26-37-2-41Z;M-2 -45C-18 -52-30-38-52-47C-40-39-24-44-2-41Z"
-                    />
-                </path>
-                <path class="cloak" d="M-6 -46C-14 -40-26 -26-42 -18L-31 -20-39 -11-27 -15-31 -6C-18 -15-9 -25-3 -29Z">
-                    <animate
-                        attributeName="d"
-                        dur="3.4s"
-                        repeatCount="indefinite"
-                        values="M-6 -46C-14 -40-26 -26-42 -18L-31 -20-39 -11-27 -15-31 -6C-18 -15-9 -25-3 -29Z;M-6 -46C-15 -42-28 -31-45 -25L-33 -24-41 -16-28 -18-32 -9C-19 -16-9 -25-3 -29Z;M-6 -46C-14 -40-26 -26-42 -18L-31 -20-39 -11-27 -15-31 -6C-18 -15-9 -25-3 -29Z"
-                    />
-                </path>
-                <path class="body" d="M-6 -0.5L-3 -24-7 -24-7 -46 7 -46 8 -24 4 -24 6 -0.5 2.5 -0.5 0.5 -18-2.5 -0.5Z" />
-                <path class="body" d="M-9 -31L11 -60" stroke-width="1.6" />
-                <circle class="body" cx="0" cy="-50" r="4.6" />
-                <path class="body" d="M-18 -50Q0 -57 18 -50Q4 -60 0 -64Q-4 -60-18 -50Z" />
-            </g>
+            <Wanderer x={FIGURE_X} y={scene.footY} />
         </svg>
         <div class="mist" aria-hidden="true">
             <span></span><span></span><span></span>
@@ -86,9 +66,7 @@
 
     <div class="caption">
         <p class="name">lscythe <em>— a wanderer of the crooked path</em></p>
-        <p class="seed">
-            seed <span>{String(seed).padStart(5, "0")}</span> · press the seal to repaint the world
-        </p>
+        <p class="seed">Painting <span>No. {seed}</span> — press the seal to paint the world anew</p>
     </div>
 
     <a class="descend" href="#prelude" aria-label="scroll to content">
@@ -156,24 +134,6 @@
 
         .birds {
             animation: drift 40s ease-in-out infinite alternate;
-        }
-    }
-
-    .wanderer {
-        .body,
-        .cloak {
-            fill: var(--figure);
-            stroke: var(--figure-edge);
-            stroke-width: 0.5;
-        }
-
-        path[stroke-width] {
-            fill: none;
-            stroke: var(--figure);
-        }
-
-        .ribbon {
-            fill: var(--blood);
         }
     }
 
@@ -287,8 +247,7 @@
     }
 
     .seed {
-        font-size: var(--font-xs);
-        letter-spacing: 0.08em;
+        font-style: italic;
         color: var(--ink-soft);
 
         span {
