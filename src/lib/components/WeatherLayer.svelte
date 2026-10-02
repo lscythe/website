@@ -1,7 +1,7 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import { afterNavigate } from "$app/navigation";
-    import { inkCloud } from "$lib/ink/sky";
+    import { xiangyun } from "$lib/ink/sky";
     import { fall } from "$lib/ink/drops";
     import { weather } from "$lib/weather.svelte";
     import Rain from "./Rain.svelte";
@@ -13,7 +13,7 @@
     //  storm:      heavier rain and the odd flash.
     const mood = $derived(weather.now?.condition ?? "clear");
     const wet = $derived(mood === "rain" || mood === "storm");
-    const clouds = [inkCloud(901), inkCloud(902)];
+    const clouds = [xiangyun(901, { width: 600, banks: 3 }), xiangyun(902, { width: 520 })];
 
     let layer: HTMLElement;
     let flash = $state(false);
@@ -103,42 +103,33 @@
     .cloud {
         position: absolute;
         left: 0;
-        width: max(100vw, 860px);
-        aspect-ratio: 1000 / 560;
+        width: max(55vw, 520px);
         will-change: transform;
+        opacity: 0.3;
         animation: pass 140s linear infinite;
 
         :global(svg) {
+            display: block;
             width: 100%;
-            height: 100%;
-        }
-
-        :global(.cloud-wash) {
-            fill: var(--ink);
-            opacity: 0.07;
-        }
-
-        :global(.cloud-line) {
-            fill: var(--ink);
-            opacity: 0.16;
+            height: auto;
         }
 
         &.c1 {
-            top: -14%;
+            top: 8%;
             animation-delay: -40s;
         }
 
         &.c2 {
-            top: 29%;
+            top: 52%;
             animation-duration: 190s;
             animation-delay: -150s;
             scale: 0.8;
         }
     }
 
-    .rain .cloud :global(.cloud-wash),
-    .storm .cloud :global(.cloud-wash) {
-        opacity: 0.11;
+    .rain .cloud,
+    .storm .cloud {
+        opacity: 0.42;
     }
 
     .flash {

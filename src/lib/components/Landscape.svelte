@@ -1,11 +1,14 @@
 <script lang="ts">
     import { onMount, untrack } from "svelte";
     import Wanderer from "./Wanderer.svelte";
-    import { paintVortex, randomSeed, SUN } from "$lib/ink/landscape";
-    import { inkCloud, lightning, paintSky, SKY_DEFS } from "$lib/ink/sky";
-    import { weather } from "$lib/weather.svelte";
     import Rain from "./Rain.svelte";
+    import { paintVortex, randomSeed, SUN } from "$lib/ink/landscape";
+    import { lightning, paintSky, xiangyun } from "$lib/ink/sky";
+    import { breathe, palette, rasterize } from "$lib/ink/raster";
+    import { isDarkNow, theme, type ThemeEvent } from "$lib/theme.svelte";
+    import { weather } from "$lib/weather.svelte";
     import {
+        BANDS,
         groundAt,
         nextLanding,
         paintWorld,
@@ -15,23 +18,27 @@
         WORLD_DEFS,
         WORLD_H,
         type Pose,
+        type World,
     } from "$lib/ink/world";
 
-    let { seed: initialSeed }: { seed: number } = $props();
+    let { seed: initialSeed, start, startY }: { seed: number; start: number; startY: number } = $props();
 
     // svelte-ignore state_referenced_locally
     let seed = $state(initialSeed);
     let painting = $state(false);
     let sunk = $state(false);
 
-    const world = $derived(paintWorld(seed));
+    // Generated in the browser only after first paint; until then the
+    // build-time picture of the same world shows (see $lib/ink/stills).
+    let world = $state.raw<World | null>(null);
     const sky = $derived(paintSky(seed));
     const vortex = $derived(paintVortex(seed));
+    const wisps = $derived([1, 2].map((n) => xiangyun(seed * 13 + n, { width: 360, banks: 2 })));
 
     // Jakarta's weather decides the mood: clear skies leave the painting alone.
     const mood = $derived(weather.now?.condition ?? "clear");
     const wet = $derived(mood === "rain" || mood === "storm");
-    const clouds = $derived([1, 2, 3, 4].map((n) => inkCloud(seed * 7 + n)));
+    const clouds = $derived([1, 2, 3, 4].map((n) => xiangyun(seed * 7 + n, { width: 560, banks: 3, heavy: wet })));
     const bolt = $derived(lightning(seed));
     let strike = $state(false);
     let boltX = $state(30);
@@ -56,38 +63,127 @@
     const DEFAULT_FX = 300;
     let fx = $state(DEFAULT_FX);
     // svelte-ignore state_referenced_locally
-    let pos = $state(world.start - DEFAULT_FX);
+    let pos = $state(start - DEFAULT_FX);
     // svelte-ignore state_referenced_locally
-    let figY = $state(groundAt(world.surfaces, world.start) ?? 640);
+    let figY = $state(startY);
     let pose = $state<Pose>("stand");
     let step = $state(0);
 
     let hero: HTMLElement;
+    let canvas: HTMLCanvasElement;
+    /** The canvas has a painted scene; until then the SVG painting shows. */
+    let ready = $state(false);
+    /** Off screen: every loop in the hero is paused. */
+    let asleep = $state(false);
     let resetWalk = () => {};
+    let repaint: (dark?: boolean) => void = () => {};
 
-    // A new painting starts the walk over.
+    // A new world starts the walk over and is painted afresh.
     $effect(() => {
-        world;
-        untrack(() => resetWalk());
+        if (!world) return;
+        untrack(() => {
+            resetWalk();
+            repaint();
+        });
     });
 
     const mod = (x: number, m: number) => ((x % m) + m) % m;
-    // Strips hold two tiles; sliding by one tile loops back to the start.
     // One scene unit in CSS px: the hero is 900 units tall (see --k in the styles).
     const actorAt = (x: number, y: number) => `translate(calc(${(x - 110).toFixed(1)} * var(--k)), calc(${(y - 130).toFixed(1)} * var(--k)))`;
-    const slide = (factor: number) => `translateX(${(-mod(pos * factor, TILE) / (2 * TILE)) * 100}%)`;
+
+    /* ---- Rendering ----------------------------------------------------
+       Each depth is rasterised once per theme into a bitmap holding one tile
+       (only the rows that carry ink). Every frame then costs six drawImage
+       calls: two copies of each layer, slid by its own parallax.          */
+
+    type Layer = "far" | "mid" | "near";
+    const LAYERS: Layer[] = ["far", "mid", "near"];
+    /** Hazy layers need fewer pixels. */
+    const DETAIL: Record<Layer, number> = { far: 0.55, mid: 0.85, near: 1 };
+
+    interface Painted {
+        layers: Record<Layer, HTMLCanvasElement>;
+        dark: boolean;
+        scale: number;
+    }
+
+    async function paintLayers(w: World | null, scale: number, dark: boolean): Promise<Painted> {
+        if (!w) throw new Error("no world yet");
+        const p = palette(dark);
+        const layers = {} as Record<Layer, HTMLCanvasElement>;
+        for (const l of LAYERS) {
+            layers[l] = await rasterize(w[l], WORLD_DEFS, TILE, BANDS[l], scale * DETAIL[l], p, w.splashes[l]);
+            await breathe();
+        }
+        return { layers, dark, scale };
+    }
 
     onMount(() => {
         const shared = Number(new URL(location.href).searchParams.get("seed"));
         if (shared > 0) seed = Math.floor(shared);
+        // Build the world once the page has shown, not during hydration.
+        const grow = () => (world = paintWorld(seed));
+        if ("requestIdleCallback" in window) requestIdleCallback(grow, { timeout: 600 });
+        else setTimeout(grow, 50);
 
         const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
+        const ctx = canvas.getContext("2d")!;
+        const DPR = Math.min(devicePixelRatio || 1, 1.5);
+        let painted: Painted | null = null;
+        let pending: Painted | null = null;
+        let job = 0;
+
+        const scale = () => canvas.height / WORLD_H;
+
+        const draw = () => {
+            if (!painted) return;
+            const S = scale();
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (const l of LAYERS) {
+                const [y0, y1] = BANDS[l];
+                const x = -mod(pos * PARALLAX[l], TILE) * S;
+                const w = TILE * S;
+                const h = (y1 - y0) * S;
+                ctx.drawImage(painted.layers[l], x, y0 * S, w, h);
+                ctx.drawImage(painted.layers[l], x + w, y0 * S, w, h);
+            }
+        };
+
+        repaint = async (dark = isDarkNow()) => {
+            if (!world) return;
+            const id = ++job;
+            pending = null;
+            const next = await paintLayers(world, scale(), dark);
+            if (id !== job) return;
+            painted = next;
+            ready = true;
+            painting = false;
+            draw();
+            prewarm(id);
+        };
+
+        // Once things are quiet, paint the other theme too, so switching finds
+        // it ready. Skipped where memory is tight.
+        const roomy = ((navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? 4) > 2;
+        const prewarm = (id: number) => {
+            if (!roomy) return;
+            setTimeout(async () => {
+                if (id !== job || !painted || pending) return;
+                const other = await paintLayers(world, scale(), !painted.dark);
+                if (id === job && !pending) pending = other;
+            }, 4000);
+        };
 
         const measure = () => {
             const box = hero.getBoundingClientRect();
+            canvas.width = Math.round(box.width * DPR);
+            canvas.height = Math.round(box.height * DPR);
             const visible = box.width / (box.height / WORLD_H);
             fx = Math.min(620, Math.max(110, visible * 0.34));
-            hero.style.setProperty("--sun-x", `${Math.max(200, visible * 0.64)}px`);
+            hero.style.setProperty("--sun-u", String(Math.max(200, visible * 0.64)));
+            // Repaint if the size changed enough for the bitmaps to look soft.
+            if (painted && Math.abs(scale() / painted.scale - 1) > 0.2) repaint(painted.dark);
+            else draw();
         };
 
         // The walk: a small state machine stepping along rock tops and bridges.
@@ -100,14 +196,17 @@
         const POSE: Record<Mode, Pose> = { walk: "walk", wait: "wait", takeoff: "crouch", jump: "jump", land: "crouch" };
 
         const reset = () => {
+            if (!world) return;
             pos = world.start - fx;
             figY = groundAt(world.surfaces, pos + fx) ?? figY;
             mode = "walk";
             cooldown = 0;
+            draw();
         };
         resetWalk = reset;
 
         const tick = (dt: number) => {
+            if (!world) return;
             const feet = pos + fx;
             if (mode === "walk") {
                 pos += SPEED * dt;
@@ -147,16 +246,37 @@
         };
 
         measure();
-        reset();
-        const onResize = () => measure();
-        addEventListener("resize", onResize);
+        const ro = new ResizeObserver(() => measure());
+        ro.observe(hero);
 
-        // The sun sets and the moon rises when the theme changes.
+        // Theme change: the sun sets while the other palette is painted, so the
+        // swap under the ink wash is instant.
         const onTheme = (e: Event) => {
-            const { phase } = (e as CustomEvent<{ phase: "set" | "rise" }>).detail;
+            const { phase, dark, ready: wait } = (e as CustomEvent<ThemeEvent>).detail;
             sunk = phase === "set";
+            if (phase === "set") {
+                if (!world || painted?.dark === dark || pending?.dark === dark) return;
+                const prep = paintLayers(world, scale(), dark).then((p) => (pending = p));
+                wait.push(prep);
+            } else if (pending?.dark === dark) {
+                // Keep the old palette as the new "other", ready to switch back.
+                [painted, pending] = [pending, painted];
+                draw();
+            } else if (painted && painted.dark !== dark) {
+                repaint(dark);
+            }
         };
         addEventListener("ink:theme", onTheme);
+        // A theme change that didn't come through setTheme (the device's own
+        // light/dark switch): swap if prepared, else repaint.
+        followSystem = () => {
+            const dark = isDarkNow();
+            if (painted?.dark === dark) return;
+            if (pending?.dark === dark) {
+                [painted, pending] = [pending, painted];
+                draw();
+            } else repaint(dark);
+        };
 
         let raf = 0;
         let last = 0;
@@ -165,6 +285,7 @@
             const dt = last ? Math.min(0.05, (t - last) / 1000) : 0;
             last = t;
             tick(dt);
+            draw();
             raf = requestAnimationFrame(frame);
         };
         const run = () => {
@@ -176,10 +297,19 @@
             cancelAnimationFrame(raf);
             raf = 0;
         };
+        // Off screen (or tab hidden): stop the walk, the CSS loops and the
+        // SMIL flock, so the hero costs nothing while you read below it.
+        const flock = hero.querySelector<SVGSVGElement>("svg.flock");
         const io = new IntersectionObserver(([entry]) => {
             visible = entry.isIntersecting;
-            if (visible) run();
-            else stop();
+            asleep = !visible;
+            if (visible) {
+                run();
+                if (!calm) flock?.unpauseAnimations();
+            } else {
+                stop();
+                flock?.pauseAnimations();
+            }
         });
         io.observe(hero);
 
@@ -191,41 +321,56 @@
         return () => {
             stop();
             io.disconnect();
-            removeEventListener("resize", onResize);
+            ro.disconnect();
             removeEventListener("ink:theme", onTheme);
         };
     });
 
+    // The device switched light/dark while following the system theme.
+    $effect(() => {
+        theme.dark;
+        untrack(() => {
+            if (ready) followSystem();
+        });
+    });
+    let followSystem = () => {};
+
     function reforge() {
         painting = true;
-        // Let the fade-out start before the main thread is busy painting.
+        // Let the fade-out start before the main thread is busy painting;
+        // the fade lifts once the new world has been painted.
         setTimeout(() => {
             seed = randomSeed();
+            world = paintWorld(seed);
             const url = new URL(location.href);
             url.searchParams.set("seed", String(seed));
             history.replaceState(history.state, "", url);
-            painting = false;
         }, 260);
     }
 </script>
 
-<section class="hero ink-scene weather-{mood}" bind:this={hero} aria-label="An ink landscape scrolling past a wandering cultivator">
-    <!-- Shared gradients and filters for every layer below. -->
-    <svg class="defs" aria-hidden="true">{@html WORLD_DEFS}{@html SKY_DEFS}</svg>
-
+<section class="hero weather-{mood}" class:asleep bind:this={hero} aria-label="An ink landscape scrolling past a wandering cultivator">
     <div class="layers" class:painting>
-        <svg class="sky" viewBox="0 0 3200 {WORLD_H}" preserveAspectRatio="xMinYMax slice" aria-hidden="true">
-            <g class="celestial">
-                <g class="vortex night-only"><g transform="translate({-SUN.x} {-SUN.y})">{@html vortex}</g></g>
-                <g class="disc" class:sunk>
-                    <g class="day-only">{@html sky.sun}</g>
-                    <g class="night-only">{@html sky.moon}</g>
-                </g>
-                <g class="clouds">{@html sky.clouds}</g>
+        <!-- Sky: each piece is a picture painted once and only ever moved. -->
+        <div class="celestial" aria-hidden="true">
+            <div class="vortex night-only">
+                <svg viewBox="-900 -560 1800 1120"><g transform="translate({-SUN.x} {-SUN.y})">{@html vortex}</g></svg>
+            </div>
+            <div class="disc" class:sunk>
+                <div class="day-only">{@html sky.sun}</div>
+                <div class="night-only">{@html sky.moon}</div>
+            </div>
+            <svg class="flock" viewBox="-1500 -450 3000 900">
                 <g class="day-only">{@html sky.cranes}</g>
                 <g class="night-only">{@html sky.bats}</g>
-            </g>
-        </svg>
+            </svg>
+        </div>
+
+        <div class="wisps" aria-hidden="true">
+            {#each wisps as cloud, i}
+                <div class="wisp w{i + 1}">{@html cloud}</div>
+            {/each}
+        </div>
 
         {#if mood !== "clear"}
             <div class="overcast" aria-hidden="true">
@@ -238,16 +383,15 @@
             <div class="bolt" class:strike style:left="{boltX}%" aria-hidden="true">{@html bolt}</div>
         {/if}
 
-        {#each [["far", world.far], ["mid", world.mid], ["near", world.near]] as [depth, art] (depth)}
-            <div class="strip {depth}" style:transform={slide(PARALLAX[depth as keyof typeof PARALLAX])}>
-                <svg viewBox="0 0 {2 * TILE} {WORLD_H}" aria-hidden="true">
-                    <defs><g id="tile-{depth}">{@html art}</g></defs>
-                    <use href="#tile-{depth}" x={-TILE} />
-                    <use href="#tile-{depth}" />
-                    <use href="#tile-{depth}" x={TILE} />
-                </svg>
-            </div>
-        {/each}
+        <!-- The mountains: drawn into this canvas from pre-painted bitmaps. -->
+        <canvas class="scene" bind:this={canvas} aria-hidden="true"></canvas>
+
+        <!-- Before script runs (or without it), a build-time picture of the
+             same painting. Hidden pictures with loading=lazy aren't fetched. -->
+        {#if !ready}
+            <img class="still day-only" src="/scene/home-light.svg" alt="" width={TILE} height={WORLD_H} loading="lazy" />
+            <img class="still night-only" src="/scene/home-dark.svg" alt="" width={TILE} height={WORLD_H} loading="lazy" />
+        {/if}
 
         <!-- A small box that rides on a transform: walking never repaints the scene. -->
         <svg class="actor" viewBox="-110 -130 180 140" style:transform={actorAt(fx, figY)} aria-hidden="true">
@@ -292,7 +436,7 @@
 
 <style>
     .hero {
-        --sun-x: 860px;
+        --sun-u: 860;
         /* Size of one scene unit: the scene is 900 units tall. */
         --k: calc(max(100svh, 560px) / 900);
         position: relative;
@@ -300,6 +444,10 @@
         min-height: 560px;
         overflow: hidden;
         isolation: isolate;
+    }
+
+    .asleep :global(*) {
+        animation-play-state: paused !important;
     }
 
     /* Let the painting dissolve into the page instead of ending on a hard edge. */
@@ -312,23 +460,27 @@
         pointer-events: none;
     }
 
-    .defs {
-        position: absolute;
-        width: 0;
-        height: 0;
-    }
-
     .layers,
-    .sky {
+    .scene,
+    .still {
         position: absolute;
         inset: 0;
         width: 100%;
         height: 100%;
     }
 
-    /* The sky animates on its own layer so it never repaints the page. */
-    .sky {
-        will-change: transform;
+    /* Same framing as the canvas: full height, anchored bottom-left. */
+    .still {
+        object-fit: cover;
+        object-position: 0 100%;
+    }
+
+    .layers {
+        transition: opacity 0.26s;
+
+        &.painting {
+            opacity: 0;
+        }
     }
 
     .actor {
@@ -341,45 +493,37 @@
         will-change: transform;
     }
 
-    .layers {
-        transition:
-            opacity 0.26s,
-            filter 0.26s;
-
-        &.painting {
-            opacity: 0;
-            filter: blur(8px);
-        }
-    }
-
-    /* Each depth is a wide strip moved only by transform, so the browser
-       slides an already-painted layer instead of redrawing ink every frame. */
-    .strip {
-        position: absolute;
-        top: 0;
-        left: 0;
-        height: 100%;
-        aspect-ratio: 4800 / 900;
-        will-change: transform;
-
-        svg {
-            display: block;
-            width: 100%;
-            height: 100%;
-        }
-    }
+    /* ---- Sky: positioned around the sun, in scene units ---------------- */
 
     .celestial {
-        transform: translate(var(--sun-x), 250px);
+        position: absolute;
+        left: calc(var(--sun-u) * var(--k));
+        top: calc(250 * var(--k));
+        width: 0;
+        height: 0;
     }
 
     .disc {
+        position: absolute;
+        left: calc(-200 * var(--k));
+        top: calc(-200 * var(--k));
+        width: calc(400 * var(--k));
+        height: calc(400 * var(--k));
+        will-change: transform;
         transition:
             transform 0.75s cubic-bezier(0.55, 0, 0.9, 0.4),
             opacity 2s ease;
 
+        > div,
+        :global(svg) {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+        }
+
         &.sunk {
-            transform: translateY(620px);
+            transform: translateY(calc(640 * var(--k)));
         }
 
         &:not(.sunk) {
@@ -387,27 +531,14 @@
                 transform 1.3s cubic-bezier(0.15, 0.6, 0.3, 1),
                 opacity 2s ease;
         }
-    }
 
-    .vortex {
-        :global(path) {
-            fill: var(--vortex);
-        }
-
-        > g {
-            transform-box: fill-box;
-            transform-origin: center;
-            animation: spin 240s linear infinite;
-        }
-    }
-
-    .sky {
-        :global(.sun) {
-            fill: var(--blood);
-        }
-
+        :global(.sun),
         :global(.moon) {
             fill: var(--blood);
+        }
+
+        :global(.blood) {
+            stop-color: var(--blood);
         }
 
         :global(.maria) {
@@ -419,11 +550,35 @@
             fill: var(--blood);
             opacity: 0.35;
         }
+    }
 
-        :global(.cloud path) {
-            fill: var(--ink);
-            opacity: 0.16;
+    /* Rotated as a whole element, so the GPU spins it without repainting. */
+    .vortex {
+        position: absolute;
+        left: calc(-900 * var(--k));
+        top: calc(-560 * var(--k));
+        width: calc(1800 * var(--k));
+        height: calc(1120 * var(--k));
+        will-change: transform;
+        animation: spin 240s linear infinite;
+
+        svg {
+            width: 100%;
+            height: 100%;
         }
+
+        :global(path) {
+            fill: var(--vortex);
+        }
+    }
+
+    .flock {
+        position: absolute;
+        left: calc(-1500 * var(--k));
+        top: calc(-450 * var(--k));
+        width: calc(3000 * var(--k));
+        height: calc(900 * var(--k));
+        overflow: visible;
 
         :global(.bird path) {
             fill: none;
@@ -432,12 +587,7 @@
             stroke-linecap: round;
         }
 
-        :global(.crane-body) {
-            fill: var(--paper);
-            stroke: var(--ink);
-            stroke-width: 1.2;
-        }
-
+        :global(.crane-body),
         :global(.crane-wing) {
             fill: var(--paper);
             stroke: var(--ink);
@@ -469,6 +619,41 @@
             fill: var(--figure);
             stroke: var(--ink-soft);
             stroke-width: 0.5;
+        }
+    }
+
+    /* A couple of small clouds always drift by. */
+    .wisps {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+        pointer-events: none;
+    }
+
+    .wisp {
+        position: absolute;
+        left: 0;
+        width: clamp(240px, 28vw, 440px);
+        will-change: transform;
+        opacity: 0.85;
+        animation: cloud-pass 120s linear infinite;
+
+        :global(svg) {
+            display: block;
+            width: 100%;
+            height: auto;
+        }
+
+        &.w1 {
+            top: 18%;
+            animation-delay: -30s;
+        }
+
+        &.w2 {
+            top: 34%;
+            animation-duration: 170s;
+            animation-delay: -110s;
+            scale: 0.75;
         }
     }
 
@@ -509,61 +694,46 @@
     .cloud {
         position: absolute;
         left: 0;
-        width: clamp(700px, 92vw, 1500px);
-        aspect-ratio: 1000 / 560;
+        width: clamp(420px, 62vw, 1000px);
         will-change: transform;
         animation: cloud-pass 90s linear infinite;
 
         :global(svg) {
+            display: block;
             width: 100%;
-            height: 100%;
-        }
-
-        :global(.cloud-wash) {
-            fill: var(--ink);
-            opacity: 0.16;
-        }
-
-        :global(.cloud-line) {
-            fill: var(--ink);
-            opacity: 0.45;
+            height: auto;
         }
 
         &.c1 {
-            top: -20%;
+            top: 2%;
             animation-duration: 75s;
             animation-delay: -12s;
         }
 
         &.c2 {
-            top: -8%;
+            top: 12%;
             animation-duration: 105s;
             animation-delay: -60s;
             scale: 0.8;
         }
 
         &.c3 {
-            top: -27%;
+            top: -3%;
             animation-duration: 130s;
             animation-delay: -95s;
             scale: 1.25;
         }
 
         &.c4 {
-            top: 1%;
+            top: 22%;
             animation-duration: 90s;
             animation-delay: -35s;
             scale: 0.65;
         }
     }
 
-    .weather-rain .cloud :global(.cloud-wash),
-    .weather-storm .cloud :global(.cloud-wash) {
-        opacity: 0.3;
-    }
-
-    .weather-fog .cloud :global(.cloud-wash) {
-        opacity: 0.1;
+    .weather-fog .cloud {
+        opacity: 0.6;
     }
 
     /* Fog: the mist banks thicken and climb. */
@@ -797,9 +967,6 @@
 
     /* On tall screens the sun sits right of centre, so the title moves left. */
     @media (aspect-ratio < 1) {
-        .hero {
-            --sun-x: 280px;
-        }
 
         .title {
             right: auto;
@@ -845,8 +1012,22 @@
         }
     }
 
+    /* Phones and tablets: a lighter sky. The vortex stays still and one
+       mist bank and one wisp are enough. */
+    @media (pointer: coarse) {
+        .vortex {
+            animation: none;
+        }
+
+        .mist span:nth-child(3),
+        .wisp.w2 {
+            display: none;
+        }
+    }
+
     @media (prefers-reduced-motion: reduce) {
-        .vortex > g,
+        .vortex,
+        .wisp,
         .mist span,
         .descend {
             animation: none;

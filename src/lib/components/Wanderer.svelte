@@ -21,17 +21,18 @@
     const legs = $derived.by(() => {
         if (pose === "walk") {
             const a = Math.sin(step) * 26;
-            return { back: -a, front: a, lift: -Math.abs(Math.cos(step)) * 1.6 };
+            return { back: a, front: -a, lift: -Math.abs(Math.cos(step)) * 1.6 };
         }
-        if (pose === "jump") return { back: -34, front: 40, lift: -2 };
-        if (pose === "crouch") return { back: -20, front: 24, lift: 4 };
-        return { back: -11, front: 13, lift: 0 };
+        if (pose === "jump") return { back: 34, front: -40, lift: -2 };
+        if (pose === "crouch") return { back: 20, front: -24, lift: 4 };
+        return { back: 11, front: -13, lift: 0 };
     });
     // While waiting the wanderer lifts their head toward the sky.
     const look = $derived(pose === "wait" ? -9 : 0);
 
     const wind = (a: string, b: string) => `${a};${b};${a}`;
-    const LEG = "M-2.8 -31L-3.4 -14-4 -1.2-9.6 -0.6-9.6 1.4 3.4 1.4 3.2 -1 1.8 -1.8 2 -14 3.2 -31Z";
+    // Toes point forward (right), the way the wanderer faces and walks.
+    const LEG = "M2.8 -31L3.4 -14 4 -1.2 9.6 -0.6 9.6 1.4-3.4 1.4-3.2 -1-1.8 -1.8-2 -14-3.2 -31Z";
 
     const ribbonA = [
         "M-13 -64C-24 -71-35 -57-52 -66-60 -70-66 -64-74 -67-64 -61-55 -63-46 -60-31 -56-23 -64-13 -62Z",
@@ -130,13 +131,15 @@
 </g>
 
 <style>
-    /* One rim light around the whole silhouette, so overlapping parts stay merged. */
-    .wanderer {
-        filter: drop-shadow(0 0 0.6px var(--figure-edge)) drop-shadow(0 0 0.6px var(--figure-edge));
-    }
-
+    /* A thin rim light so the figure reads at night. Drawn as a stroke under
+       each shape (paint-order) rather than a drop-shadow filter, which would
+       re-run on every frame of the walk. */
     .figure {
         fill: var(--figure);
+        stroke: var(--figure-edge);
+        stroke-width: 0.9;
+        paint-order: stroke;
+        stroke-linejoin: round;
     }
 
     .head {

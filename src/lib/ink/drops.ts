@@ -1,4 +1,4 @@
-const SHAPES = ["/ink/splash-1.svg", "/ink/splash-2.svg", "/ink/splash-3.svg"];
+const SHAPES = ["/ink/blot-1.webp", "/ink/blot-2.webp", "/ink/blot-3.webp"];
 
 /**
  * A drop of ink that blooms into a splash on the paper and dries away.

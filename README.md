@@ -28,8 +28,17 @@ fog bring drifting ink clouds and haze; rain brings ink rain, the wanderer's red
 splashing between pages; a storm adds lightning. Add `?weather=clear|cloudy|fog|rain|storm` to any
 URL to preview a mood. Under `bun run dev` there is no Worker, so the sky stays clear.
 
-The splash and brush-stroke shapes used around the site are CSS masks in `static/ink/`,
-regenerated with `bun scripts/ink-assets.ts`.
+### performance
+
+The painting is generated as SVG but never animated as SVG. In the browser each depth is painted
+once per theme into a bitmap (`src/lib/ink/raster.ts`) and the hero redraws those bitmaps into one
+canvas each frame. The sun, moon and clouds are pictures that only move. The other theme is
+painted ahead of time when the page is idle, so switching swaps bitmaps under the ink wash.
+Before script runs, and without it, `/scene/*.svg` (baked at build time, `src/lib/ink/stills.ts`)
+show the same painting as plain images.
+
+The ink blots (`static/ink/blot-*.webp`) come from `python3 scripts/ink-blots.py` (needs numpy
+and Pillow); the brush strokes (`static/ink/stroke-*.svg`) from `bun scripts/ink-assets.ts`.
 
 ## develop
 

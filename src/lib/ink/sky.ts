@@ -42,32 +42,6 @@ export function moon(rand: Rand): string {
   <g clip-path="url(#moon-clip)">${maria.join("")}</g>`;
 }
 
-/** Wisps of cloud, written as long curling strokes, drifting past the disc. */
-export function clouds(rand: Rand): string {
-  const noise = createNoise(rand);
-  const out: string[] = [];
-  for (let c = 0; c < 3; c++) {
-    const y = between(rand, -40, 70);
-    const len = between(rand, 220, 380);
-    const line: Pt[] = [];
-    for (let i = 0; i <= 30; i++) {
-      const t = i / 30;
-      line.push([-len / 2 + t * len, y + Math.sin(t * Math.PI * 2 + c) * 8 + (noise(t * 3, c) - 0.5) * 10]);
-    }
-    // A curl at the head of the wisp, like an auspicious cloud.
-    const [hx, hy] = line[line.length - 1];
-    for (let i = 0; i <= 14; i++) {
-      const a = (i / 14) * Math.PI * 1.6;
-      line.push([hx + Math.sin(a) * 14, hy - 14 + Math.cos(a) * 14]);
-    }
-    const dur = between(rand, 70, 110);
-    const from = between(rand, -420, -260);
-    out.push(`<g class="cloud"><path d="${brush(line, noise, { width: between(rand, 5, 9), wobble: 1, offset: c * 5 })}"/>
-      <animateTransform attributeName="transform" type="translate" dur="${r(dur)}s" begin="-${r(rand() * dur)}s" repeatCount="indefinite" values="${r(from)} 0;${r(-from)} 0"/></g>`);
-  }
-  return out.join("");
-}
-
 /* ------------------------------------------------------------------ */
 /* Creatures                                                           */
 /* ------------------------------------------------------------------ */
@@ -139,9 +113,23 @@ export function bats(rand: Rand): string {
   return out.join("");
 }
 
+/**
+ * The sun and the moon as standalone pictures (with their own glow, bleed
+ * and halo), centred in a 400 x 400 box. Each is drawn once by the browser
+ * and then only moved, which keeps the sunset cheap.
+ */
+function disc(body: string, key: string) {
+  // Ids are made unique per picture: the sun is hidden at night, and a
+  // gradient inside a hidden element would not paint for the moon.
+  const ids = ["sky-glow", "sky-bleed", "moon-clip", "pomo-soft"];
+  let out = SKY_DEFS + body;
+  for (const id of ids) out = out.replaceAll(`"${id}"`, `"${id}-${key}"`).replaceAll(`#${id})`, `#${id}-${key})`);
+  return `<svg viewBox="-200 -200 400 400" aria-hidden="true">${out}</svg>`;
+}
+
 export function paintSky(seedInput: number) {
   const rand = createRand(seedInput ^ 0x2545f491);
-  return { sun: sun(), moon: moon(rand), clouds: clouds(rand), cranes: cranes(rand), bats: bats(rand) };
+  return { sun: disc(sun(), "sun"), moon: disc(moon(rand), "moon"), cranes: cranes(rand), bats: bats(rand) };
 }
 
 export const SKY_DEFS = `
@@ -166,40 +154,110 @@ export const SKY_DEFS = `
 /* ------------------------------------------------------------------ */
 
 /**
- * A rain cloud in ink: overlapping washes that bleed into each other, with a
- * scroll of curling brush strokes along its belly. The cloud itself spans
- * about 600 x 240 inside a 1000 x 560 box.
+ * 祥云-style cloud bank, after ink-painting cloud patterns: a scalloped top
+ * edge, echoed by parallel contour lines that run shorter and flatter as they
+ * go down and finish in a curl, over a soft grey wash. No filters, so it costs
+ * little to draw and nothing to move.
  */
-export function inkCloud(seed: number): string {
+interface BankSpec {
+  x: number;
+  y: number;
+  w: number;
+  lines: number;
+  gap: number;
+  rise: number;
+}
+
+function bank(rand: Rand, noise: ReturnType<typeof createNoise>, b: BankSpec, gradient: string, out: string[]) {
+  // Scallops across the top, tallest towards the middle of the bank.
+  const humps: { a: number; z: number; h: number }[] = [];
+  let x = b.x;
+  while (x < b.x + b.w - 20) {
+    const span = between(rand, 70, 150);
+    const mid = (x + span / 2 - b.x) / b.w;
+    humps.push({ a: x, z: Math.min(x + span, b.x + b.w), h: b.rise * between(rand, 0.45, 1) * (0.55 + 0.45 * Math.sin(Math.PI * mid)) });
+    x += span * between(rand, 0.72, 0.92);
+  }
+  const top = (px: number) => {
+    let lift = 0;
+    for (const h of humps) {
+      if (px < h.a || px > h.z) continue;
+      lift = Math.max(lift, h.h * Math.pow(Math.sin((Math.PI * (px - h.a)) / (h.z - h.a)), 0.65));
+    }
+    return b.y - lift;
+  };
+  const xs: number[] = [];
+  for (let px = b.x; px <= b.x + b.w; px += 4) xs.push(px);
+  const depthPx = b.lines * b.gap + 6;
+  // The body thins to rounded ends, so no bank stops in a hard edge.
+  const under = (px: number) => {
+    const t = Math.min(1, Math.max(0, (px - b.x) / b.w));
+    return top(px) + depthPx * Math.pow(Math.sin(Math.PI * t), 0.35);
+  };
+
+  // Body: paper underneath (it hides what's behind), a grey wash over it.
+  const outline = xs.map((px) => `${r(px)} ${r(top(px))}`).join("L");
+  const belly = [...xs].reverse().map((px) => `${r(px)} ${r(under(px))}`).join("L");
+  const body = `M${outline}L${belly}Z`;
+  out.push(`<path d="${body}" fill="url(#${gradient}-paper)"/><path d="${body}" fill="url(#${gradient})"/>`);
+
+  // Contour lines, each one shorter and flatter, ending in a curl.
+  for (let k = 0; k < b.lines; k++) {
+    const inL = k * between(rand, 4, 18);
+    const inR = k * between(rand, 8, 26);
+    const flat = Math.pow(0.7, k);
+    const line: Pt[] = [];
+    for (const px of xs) {
+      if (px < b.x + inL || px > b.x + b.w - inR) continue;
+      const y = b.y + k * b.gap - (b.y - top(px)) * flat + (noise(px * 0.02, k) - 0.5) * 1.5;
+      if (k > 0 && y > under(px) - 2) {
+        if (line.length) break;
+        continue;
+      }
+      line.push([px, y]);
+    }
+    // Skip stubs: a line cut short by the body's taper would dangle.
+    if (line.length < 4 || line[line.length - 1][0] - line[0][0] < b.w * 0.3) continue;
+    const [hx, hy] = line[line.length - 1];
+    const curl = b.gap * between(rand, 0.55, 0.85);
+    for (let i = 1; i <= 14; i++) {
+      const a = (i / 14) * Math.PI * 1.5;
+      line.push([hx + Math.sin(a) * curl, hy + curl - Math.cos(a) * curl]);
+    }
+    out.push(`<path class="cloud-line" d="${brush(line, noise, { width: k === 0 ? 3.2 : between(rand, 1.4, 2.4), taper: "both", wobble: 0.5, offset: k * 7 + b.x })}"/>`);
+  }
+}
+
+/** A cloud of two or three banks; returns a self-contained <svg>. */
+export function xiangyun(seed: number, opts: { width?: number; banks?: number; heavy?: boolean } = {}): string {
   const rand = createRand(seed);
   const noise = createNoise(rand);
+  const width = opts.width ?? 520;
+  const banks = opts.banks ?? 2 + Math.floor(rand() * 2);
+  const gradient = `cloud-shade-${seed}`;
   const out: string[] = [];
-  const lobes = 5 + Math.floor(rand() * 3);
-  for (let i = 0; i < lobes; i++) {
-    const cx = 80 + (i / (lobes - 1)) * 440 + between(rand, -30, 30);
-    const cy = 130 - Math.sin((i / (lobes - 1)) * Math.PI) * between(rand, 30, 60);
-    out.push(`<ellipse class="cloud-wash" cx="${r(cx)}" cy="${r(cy)}" rx="${r(between(rand, 70, 120))}" ry="${r(between(rand, 45, 70))}" filter="url(#cloud-bleed)"/>`);
+  // Back banks first: smaller and higher, offset sideways.
+  for (let i = 0; i < banks; i++) {
+    const depth = banks - 1 - i;
+    const w = width * (1 - depth * 0.22) * between(rand, 0.85, 1);
+    bank(
+      rand,
+      noise,
+      {
+        x: 20 + between(rand, 0, width - w),
+        y: 70 + i * between(rand, 30, 44),
+        w,
+        lines: opts.heavy ? 7 : 4 + Math.floor(rand() * 3),
+        gap: between(rand, 6.5, 9),
+        rise: between(rand, 22, 36) * (opts.heavy ? 1.3 : 1),
+      },
+      gradient,
+      out,
+    );
   }
-  // Belly strokes, each ending in a small curl.
-  for (let k = 0; k < 3; k++) {
-    const y = 165 + k * 14;
-    const x0 = between(rand, 40, 120);
-    const x1 = between(rand, 420, 560);
-    const line: Pt[] = [];
-    for (let i = 0; i <= 24; i++) {
-      const t = i / 24;
-      line.push([x0 + (x1 - x0) * t, y + Math.sin(t * Math.PI * 3 + k) * 5 + (noise(t * 3, k + seed) - 0.5) * 8]);
-    }
-    const [hx, hy] = line[line.length - 1];
-    for (let i = 0; i <= 12; i++) {
-      const a = (i / 12) * Math.PI * 1.7;
-      line.push([hx + Math.sin(a) * 11, hy - 11 + Math.cos(a) * 11]);
-    }
-    out.push(`<path class="cloud-line" d="${brush(line, noise, { width: between(rand, 3, 6), wobble: 1, offset: k * 3 + seed })}"/>`);
-  }
-  // Generous margins: the wash is displaced and blurred well past its shapes,
-  // and must fade out inside the box rather than be cut off at its edge.
-  return `<svg viewBox="-200 -160 1000 560" aria-hidden="true"><defs><filter id="cloud-bleed-${seed}" x="-60%" y="-60%" width="220%" height="220%"><feTurbulence type="fractalNoise" baseFrequency="0.025" numOctaves="3" seed="${seed}" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="34" result="d"/><feGaussianBlur in="d" stdDeviation="9"/></filter></defs>${out.join("").replaceAll("url(#cloud-bleed)", `url(#cloud-bleed-${seed})`)}</svg>`;
+  const h = 70 + banks * 44 + 80;
+  const shade = opts.heavy ? [0.55, 0] : [0.3, 0];
+  return `<svg viewBox="0 0 ${width + 60} ${h}" aria-hidden="true"><defs><linearGradient id="${gradient}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="cloud-tone" stop-opacity="${shade[0]}"/><stop offset="1" class="cloud-tone" stop-opacity="${shade[1]}"/></linearGradient><linearGradient id="${gradient}-paper" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="cloud-paper" stop-opacity="0.95"/><stop offset="0.55" class="cloud-paper" stop-opacity="0.85"/><stop offset="1" class="cloud-paper" stop-opacity="0"/></linearGradient></defs>${out.join("")}</svg>`;
 }
 
 /** A forked bolt of lightning, written as one jagged brush stroke. */

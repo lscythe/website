@@ -11,7 +11,7 @@
     <div class="folio-mark" aria-hidden="true">吾名</div>
     <div>
         <div class="portrait">
-            <HangingScroll seed={data.seed} caption="The wanderer — painted anew with every build." />
+            <HangingScroll footY={data.footY} caption="The wanderer — painted anew with every build." />
             <a href="/experience">Read my experience</a>
         </div>
 

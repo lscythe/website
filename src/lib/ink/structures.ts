@@ -180,9 +180,12 @@ export function bridge(p: Painter, x0: number, y0: number, x1: number, y1: numbe
   return deck.map(([x, y]) => [x, y - 2] as Pt);
 }
 
-/** 潑墨: a loose wash of splashed ink, edges torn by the paper. */
-export function splash(p: Painter, x: number, y: number, rx: number, ry: number, cls = "pomo") {
-  p.out.push(`<ellipse class="${cls}" cx="${r(x)}" cy="${r(y)}" rx="${r(rx)}" ry="${r(ry)}" filter="url(#pomo)"/>`);
+/**
+ * 潑墨: a loose wash of splashed ink. Recorded rather than drawn: the hero's
+ * renderer lays a watercolour blot (static/ink/blot-*.webp) at this spot.
+ */
+export function splash(p: Painter, x: number, y: number, rx: number, ry: number, alpha = 0.3) {
+  p.splashes?.push({ x, y, rx, ry, alpha, shape: Math.floor(p.rand() * 3) });
 }
 
 /** Flecks of ink flicked from a loaded brush. */

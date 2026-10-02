@@ -68,8 +68,9 @@
         justify-content: space-between;
         align-items: center;
         padding: var(--space-md) var(--space-lg);
-        background: color-mix(in srgb, var(--paper) 82%, transparent);
-        backdrop-filter: blur(6px);
+        /* Near-opaque instead of a backdrop blur, which would re-blur the
+           animated hero under it every frame. */
+        background: color-mix(in srgb, var(--paper) 94%, transparent);
         border-bottom: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
         transition:
             transform 0.35s cubic-bezier(0.7, 0, 0.2, 1),
@@ -82,14 +83,12 @@
 
         &.at-top {
             background: transparent;
-            backdrop-filter: none;
             border-color: transparent;
         }
 
         /* With the menu open the bar and the menu read as one solid panel. */
         &.open {
             background: var(--paper);
-            backdrop-filter: none;
             border-color: transparent;
         }
     }

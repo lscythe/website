@@ -10,10 +10,21 @@ export const SUN = { x: 905, y: 285, r: 52 };
 
 export type Depth = "far" | "mid" | "near";
 
+/** A splash of ink (潑墨), painted as a watercolour blot by the renderer. */
+export interface Splash {
+  x: number;
+  y: number;
+  rx: number;
+  ry: number;
+  alpha: number;
+  shape: number;
+}
+
 export interface Painter {
   rand: Rand;
   noise: Noise;
   out: string[];
+  splashes?: Splash[];
 }
 
 export const DEPTH = {
