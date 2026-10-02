@@ -20,7 +20,7 @@ export const EXPERIENCE: Role[] = [
   {
     role: "Senior Android Developer",
     company: "SALT",
-    period: "Jun 2024 – Present",
+    period: "Jun 2024 – Apr 2026",
     points: [
       "Maintain and develop new features for BCA Life mobile app using Kotlin and Jetpack Compose, delivering 2 major features including a hospital locator with Google Maps integration.",
       "Modernized project architecture by refactoring incorrect MVVM implementation, consolidating scattered ViewModels into proper architecture patterns.",

@@ -25,9 +25,13 @@ bun run check   # svelte-check
 
 ## writing
 
-Posts are markdown files in `src/posts/<slug>.md` with frontmatter
-(`title`, `description`, `pubDate`, optional `updatedDate`, `tag`, `heroImage`, `draft`).
-They show up on `/blog`, in `/rss.xml` and in `/sitemap.xml`.
+Posts are markdown files in `src/posts/`. A folder groups posts into a series, and the URL follows
+the path: `src/posts/rebooting-android-basics/threading-101.md` is served at
+`/blog/rebooting-android-basics/threading-101`.
+
+Frontmatter: `title`, `pubDate`, and optionally `description`, `series` (display name), `tag`,
+`updatedDate`, `heroImage`, `draft`. Parts of a series are ordered by `pubDate`. Published posts
+show up on `/blog`, in `/rss.xml` and in `/sitemap.xml`.
 
 ## deploy
 

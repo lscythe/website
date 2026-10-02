@@ -19,7 +19,7 @@ export function GET() {
       <title>${escape(post.title)}</title>
       <link>${link}</link>
       <guid isPermaLink="true">${link}</guid>
-      <description>${escape(post.description)}</description>
+      <description>${escape(post.description ?? "")}</description>
       <pubDate>${new Date(post.pubDate).toUTCString()}</pubDate>
       <content:encoded><![CDATA[${content.replace(/]]>/g, "]]]]><![CDATA[>")}]]></content:encoded>
     </item>`;
